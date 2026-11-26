@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi"><head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Executive Steel Structure BI Dashboard</title>
   <!-- Trusted CDNs -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -735,10 +735,69 @@
     @media (max-width: 1280px) {
       .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
+    .slicer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.42);
+      z-index: 25;
+      display: none;
+    }
+    .slicer-backdrop.open { display: block; }
+
+    /* Tablet / iPad (769px - 1180px) */
+    @media (max-width: 1180px) {
+      .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .chart-box { height: 310px; }
+      .chart-box.tall { height: 350px; }
+    }
+
+    /* iPad Portrait & Mobile (< 980px) */
     @media (max-width: 980px) {
       .chart-grid-2 { grid-template-columns: 1fr; }
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .slicer-panel { position: fixed; left: 0; top: 94px; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+      .slicer-panel {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: min(320px, 86vw);
+        z-index: 60;
+        box-shadow: 6px 0 24px rgba(15, 23, 42, 0.22);
+      }
+      .slicer-panel.collapsed {
+        width: 0;
+        box-shadow: none;
+      }
+      .slicer-panel:not(.collapsed) ~ .slicer-backdrop {
+        display: block;
+      }
+    }
+
+    /* Mobile Phone (< 640px) */
+    @media (max-width: 640px) {
+      body { font-size: 13.5px; }
+      .header-top { padding: 8px 12px; gap: 10px; }
+      .brand-logo { width: 32px; height: 32px; font-size: 13px; }
+      .project-title { font-size: 14.5px; flex-wrap: wrap; gap: 6px; }
+      .header-actions { width: 100%; justify-content: flex-start; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+      .header-actions .btn-sm { padding: 6px 9px; font-size: 11.5px; white-space: nowrap; flex-shrink: 0; }
+      .ticker-bar { height: 28px; font-size: 11px; }
+      .ticker-label { padding: 0 9px; font-size: 10px; }
+      .main-content { padding: 12px 10px 32px; gap: 12px; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .kpi-grid .kpi-card:last-child { grid-column: span 2; }
+      .kpi-card { padding: 12px; }
+      .kpi-val { font-size: 20px; }
+      .card { padding: 12px; }
+      .card-title { font-size: 13.5px; }
+      .chart-box { height: 255px; }
+      .chart-box.tall { height: 285px; }
+      .table-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+      .search-wrap { min-width: 0; max-width: none; width: 100%; }
+      .vtable-viewport { height: 380px; -webkit-overflow-scrolling: touch; }
+      .vtable-scroll-x { -webkit-overflow-scrolling: touch; }
+      .slicer-opt { padding: 6px 2px; min-height: 32px; }
+      .slicer-opt input[type="checkbox"] { width: 16px; height: 16px; }
+      .btn { min-height: 34px; }
     }
   </style>
 </head>
@@ -791,6 +850,7 @@
 <div class="app-shell">
   <!-- LEFT SLIDING SLICER PANEL -->
   <aside class="slicer-panel" id="slicerPanel">
+    <script>if (window.innerWidth < 980) document.getElementById("slicerPanel").classList.add("collapsed");</script>
     <div class="slicer-header">
       <h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="filter" style="width:14px;height:14px;color:var(--brand);" class="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg> Bộ Lọc Đa Chiều</h3>
       <button class="btn btn-sm" id="btnResetFilters">Reset bộ lọc</button>
@@ -823,6 +883,7 @@
       <div id="dynamicSlicers"></div>
     </div>
   </aside>
+  <div class="slicer-backdrop" id="slicerBackdrop"></div>
 
   <!-- MAIN WORKSPACE -->
   <main class="main-content">
@@ -926,7 +987,7 @@
           </div>
           <div class="kpi-sub">
             <span id="kpiPaintAvg">TB: 1.304,9 m²/Tấn</span>
-            <span id="kpiFilterSpeed" style="font-size:10.5px;color:#64748B;">Xử lý: 14.2 ms</span>
+            <span id="kpiFilterSpeed" style="font-size:10.5px;color:#64748B;">Xử lý: 14.5 ms</span>
           </div>
         </div>
       </section>
@@ -2989,8 +3050,23 @@ Hôm nay` : val
     XLSX.writeFile(wb, `Steel_Report_Filtered_${Math.min(TABLE_INDICES.length, limit)}.xlsx`);
   }
 
+  const slicerPanelEl = document.getElementById('slicerPanel');
+  const slicerBackdropEl = document.getElementById('slicerBackdrop');
+  function syncSlicerBackdrop() {
+    if (window.innerWidth < 980 && !slicerPanelEl.classList.contains('collapsed')) {
+      slicerBackdropEl.classList.add('open');
+    } else {
+      slicerBackdropEl.classList.remove('open');
+    }
+  }
   document.getElementById('btnToggleSlicer').addEventListener('click', () => {
-    document.getElementById('slicerPanel').classList.toggle('collapsed');
+    slicerPanelEl.classList.toggle('collapsed');
+    syncSlicerBackdrop();
+    setTimeout(() => Object.values(charts).forEach(ch => ch.resize()), 240);
+  });
+  slicerBackdropEl.addEventListener('click', () => {
+    slicerPanelEl.classList.add('collapsed');
+    syncSlicerBackdrop();
     setTimeout(() => Object.values(charts).forEach(ch => ch.resize()), 240);
   });
 
@@ -3086,7 +3162,16 @@ Hôm nay` : val
   document.getElementById('btnDemoHero').addEventListener('click', runDemo);
   document.getElementById('btnDemoQuick').addEventListener('click', runDemo);
 
-  window.addEventListener('resize', () => Object.values(charts).forEach(ch => ch.resize()));
+  window.addEventListener('resize', () => {
+    syncSlicerBackdrop();
+    Object.values(charts).forEach(ch => ch.resize());
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      syncSlicerBackdrop();
+      Object.values(charts).forEach(ch => ch.resize());
+    }, 220);
+  });
 
   // ===== EXPORT PDF (EXECUTIVE A4 LANDSCAPE PRINT) =====
   function exportPDF() {
