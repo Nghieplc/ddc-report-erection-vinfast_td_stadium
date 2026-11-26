@@ -1,0 +1,3238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Executive Steel Structure BI Dashboard</title>
+  <!-- Trusted CDNs -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --brand: #8B1E24;
+      --brand-dark: #691419;
+      --brand-soft: #FDF2F2;
+      --amber: #D97706;
+      --amber-soft: #FEF3C7;
+      --emerald: #059669;
+      --emerald-soft: #D1FAE5;
+      --slate-bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --border: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+      --radius: 10px;
+      --slicer-w: 310px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      background: var(--slate-bg);
+      color: var(--text-main);
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    /* ===== TOP HEADER & TICKER ===== */
+    .exec-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .project-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .data-date-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      border: 1px solid #F5C2C7;
+    }
+    .project-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      transition: all 0.15s ease;
+    }
+    .btn:hover { background: #F1F5F9; border-color: #CBD5E1; }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+    .btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+    .btn-amber {
+      background: var(--amber-soft);
+      color: #92400E;
+      border-color: #FCD34D;
+    }
+    .btn-amber:hover { background: #FDE68A; }
+    .btn-emerald {
+      background: var(--emerald);
+      color: #fff;
+      border-color: var(--emerald);
+    }
+    .btn-emerald:hover { background: #047857; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* Scrolling Ticker */
+    .ticker-bar {
+      background: #1E293B;
+      color: #F8FAFC;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      font-size: 12px;
+    }
+    .ticker-label {
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+      padding: 0 14px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      z-index: 2;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .ticker-track {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .ticker-content {
+      display: inline-block;
+      white-space: nowrap;
+      padding-left: 100%;
+      animation: ticker-scroll 34s linear infinite;
+    }
+    .ticker-content:hover { animation-play-state: paused; }
+    @keyframes ticker-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    .ticker-highlight { color: #FBBF24; font-weight: 700; }
+    .ticker-green { color: #34D399; font-weight: 700; }
+
+    /* ===== MAIN SHELL ===== */
+    .app-shell {
+      display: flex;
+      min-height: calc(100vh - 94px);
+    }
+
+    /* ===== SLIDING SLICER PANEL ===== */
+    .slicer-panel {
+      width: var(--slicer-w);
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.22s ease, opacity 0.2s ease;
+      position: sticky;
+      top: 94px;
+      height: calc(100vh - 94px);
+      z-index: 30;
+    }
+    .slicer-panel.collapsed {
+      width: 0;
+      overflow: hidden;
+      border-right: none;
+    }
+    .slicer-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #F8FAFC;
+    }
+    .slicer-header h3 {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-counter {
+      padding: 8px 14px;
+      background: var(--brand-soft);
+      border-bottom: 1px solid #F5C2C7;
+      font-size: 12px;
+      color: var(--brand-dark);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .slicer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px 24px;
+    }
+    .slicer-group {
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .slicer-group-head {
+      padding: 8px 10px;
+      background: #F8FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      user-select: none;
+    }
+    .slicer-group-head:hover { background: #F1F5F9; }
+    .slicer-badge {
+      background: var(--brand);
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      display: none;
+    }
+    .slicer-badge.active { display: inline-block; }
+    .slicer-group-body {
+      display: none;
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      max-height: 190px;
+      overflow-y: auto;
+    }
+    .slicer-group.open .slicer-group-body { display: block; }
+    .slicer-search {
+      width: 100%;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11.5px;
+      margin-bottom: 6px;
+      outline: none;
+    }
+    .slicer-search:focus { border-color: var(--brand); }
+    .slicer-opt {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 3px 2px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .slicer-opt:hover { background: #F8FAFC; }
+    .slicer-opt label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .slicer-opt input[type="checkbox"] { accent-color: var(--brand); }
+    .slicer-opt-cnt {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .date-range-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .date-field label {
+      display: block;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .date-field input {
+      width: 100%;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11.5px;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 18px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Dropzone / Ingestion Modal & Banner */
+    .upload-card {
+      background: #fff;
+      border: 2px dashed #CBD5E1;
+      border-radius: 12px;
+      padding: 36px 24px;
+      text-align: center;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow);
+    }
+    .upload-card.dragover {
+      border-color: var(--brand);
+      background: var(--brand-soft);
+    }
+    .upload-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      display: inline-grid;
+      place-items: center;
+      margin-bottom: 12px;
+    }
+    .upload-path {
+      display: inline-block;
+      margin: 8px 0 18px;
+      padding: 5px 12px;
+      background: #F1F5F9;
+      border-radius: 6px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #334155;
+      word-break: break-all;
+    }
+    .upload-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Progress Overlay */
+    .progress-box {
+      display: none;
+      margin-top: 18px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .progress-box.active { display: block; }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--brand), #DC2626);
+      transition: width 0.2s ease;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 15px 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--brand);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .kpi-card.emerald { border-top-color: var(--emerald); }
+    .kpi-card.amber { border-top-color: var(--amber); }
+    .kpi-card.slate { border-top-color: #334155; }
+    .kpi-card.blue { border-top-color: #2563EB; }
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .kpi-val {
+      font-size: 23px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+    .kpi-unit { font-size: 12.5px; font-weight: 600; color: var(--text-muted); margin-left: 3px; }
+    .kpi-sub {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .kpi-pill {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .pill-green { background: var(--emerald-soft); color: #065F46; }
+    .pill-amber { background: var(--amber-soft); color: #92400E; }
+    .pill-red { background: var(--brand-soft); color: var(--brand); }
+    .kpi-bar {
+      height: 5px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .kpi-bar-fill { height: 100%; border-radius: 999px; }
+
+    /* Charts Grid */
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .chart-grid-full {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .card-sub { font-size: 11.5px; color: var(--text-muted); }
+    .seg-control {
+      display: inline-flex;
+      background: #F1F5F9;
+      padding: 3px;
+      border-radius: 7px;
+      gap: 2px;
+      flex-wrap: wrap;
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .seg-btn.active {
+      background: #fff;
+      color: var(--brand);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+    .chart-box {
+      width: 100%;
+      height: 340px;
+    }
+    .chart-box.tall { height: 390px; }
+
+    /* ===== VIRTUAL TABLE & SEARCH (7-COLUMN VERTICAL SCROLL) ===== */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 280px;
+      max-width: 520px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 8px 34px 8px 34px;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(139,30,36,0.1); }
+    .search-icon-left {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+    }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
+      z-index: 40;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+    .autocomplete-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 12px;
+    }
+    .autocomplete-item:hover { background: var(--brand-soft); }
+    .autocomplete-item strong { color: var(--brand); }
+
+    /* Virtual Table Container - Clean 7-Column Vertical Scroll */
+    .vtable-outer {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .vtable-scroll-x {
+      overflow-x: auto;
+      width: 100%;
+    }
+    .vtable-inner {
+      min-width: 920px;
+      width: 100%;
+    }
+    .vtable-header, .vtable-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 2fr) minmax(140px, 1.3fr) 115px 115px 130px 130px 155px;
+      align-items: center;
+      width: 100%;
+    }
+    .vtable-header {
+      background: #F1F5F9;
+      border-bottom: 2px solid #CBD5E1;
+      font-weight: 700;
+      font-size: 11.5px;
+      color: #1E293B;
+      padding: 0 12px;
+      height: 40px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .vtable-viewport {
+      height: 520px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+    }
+    .vtable-spacer {
+      position: relative;
+      width: 100%;
+    }
+    .vtable-rows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .vtable-row {
+      height: 40px;
+      padding: 0 12px;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 12.5px;
+      background: #FFFFFF;
+    }
+    .vtable-row.alt { background: #FAFBFD; }
+    .vtable-row:hover { background: #FEF2F2; }
+    .vcell {
+      padding: 0 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .vcell.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .vcell.center { text-align: center; }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .st-erected { background: var(--emerald-soft); color: #065F46; }
+    .st-delivered { background: var(--amber-soft); color: #92400E; }
+    .st-hold { background: var(--brand-soft); color: var(--brand); }
+    .st-pending { background: #E2E8F0; color: #475569; }
+
+    /* Modal for updating data */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      place-items: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    .hidden { display: none !important; }
+
+    /* ===== PRINT / PDF EXPORT STYLES ===== */
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      body { background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .slicer-panel, .header-actions, #btnToggleSlicer, .modal-backdrop, #emptyState, .seg-control, .table-toolbar .search-wrap, .table-toolbar button {
+        display: none !important;
+      }
+      .exec-header { position: static !important; box-shadow: none !important; border-bottom: 2px solid var(--brand) !important; }
+      .ticker-content { animation: none !important; padding-left: 12px !important; white-space: normal !important; }
+      .main-content { padding: 10px 0 !important; gap: 12px !important; }
+      .kpi-grid { grid-template-columns: repeat(5, 1fr) !important; gap: 8px !important; }
+      .chart-grid-2 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+      .card { box-shadow: none !important; border: 1px solid #CBD5E1 !important; page-break-inside: avoid; break-inside: avoid; }
+      .chart-box { height: 270px !important; }
+      .chart-box.tall { height: 310px !important; }
+      .vtable-viewport { height: auto !important; max-height: none !important; overflow: visible !important; }
+    }
+
+    @media (max-width: 1280px) {
+      .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 980px) {
+      .chart-grid-2 { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .slicer-panel { position: fixed; left: 0; top: 94px; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== EXECUTIVE HEADER ===== -->
+<header class="exec-header">
+  <div class="header-top">
+    <div class="brand-block">
+      <button class="btn btn-sm" id="btnToggleSlicer" title="Thu gọn / Mở rộng Bộ lọc">
+        <i data-lucide="sliders-horizontal" style="width:15px;height:15px;"></i> Bộ Lọc
+      </button>
+      <div class="brand-logo">DDC</div>
+      <div>
+        <div class="project-title">
+          <span id="hdrProjectName">BÁO CÁO ĐIỀU HÀNH KẾT CẤU THÉP</span>
+          <span class="data-date-pill" id="hdrDataDate">Data Date: --/--/----</span>
+        </div>
+        <div class="project-sub" id="hdrSubInfo">Chưa nạp dữ liệu • Hỗ trợ 170.000+ cấu kiện (Web Worker + IndexedDB)</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-amber btn-sm" id="btnDemoQuick">
+        <i data-lucide="zap" style="width:14px;height:14px;"></i> Tải Dữ Liệu Mẫu (Demo 50.000 dòng)
+      </button>
+      <button class="btn btn-primary btn-sm" id="btnOpenUpload">
+        <i data-lucide="upload-cloud" style="width:14px;height:14px;"></i> Cập nhật dữ liệu mới
+      </button>
+      <button class="btn btn-sm" id="btnExportPDF" title="Xuất báo cáo ra PDF (A4 Ngang)">
+        <i data-lucide="printer" style="width:14px;height:14px;color:var(--brand);"></i> Xuất PDF
+      </button>
+      <button class="btn btn-emerald btn-sm" id="btnExportHTML" title="Xuất file HTML báo cáo độc lập kèm sẵn dữ liệu hiện tại">
+        <i data-lucide="file-code" style="width:14px;height:14px;"></i> Xuất HTML
+      </button>
+      <button class="btn btn-sm" id="btnClearCache" title="Xóa bộ nhớ đệm IndexedDB">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Xóa Cache
+      </button>
+    </div>
+  </div>
+  <!-- Scrolling Ticker -->
+  <div class="ticker-bar">
+    <div class="ticker-label">
+      <i data-lucide="radio" style="width:13px;height:13px;"></i> BẢN TIN CÔNG TRƯỜNG
+    </div>
+    <div class="ticker-track">
+      <div class="ticker-content" id="tickerText">
+        Sẵn sàng nạp dữ liệu từ Excel (Data_Report.xlsx) hoặc bấm "Tải Dữ Liệu Mẫu (Demo 50.000 dòng)" để trải nghiệm hiệu năng tức thì...
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN SHELL ===== -->
+<div class="app-shell">
+  <!-- LEFT SLIDING SLICER PANEL -->
+  <aside class="slicer-panel" id="slicerPanel">
+    <div class="slicer-header">
+      <h3><i data-lucide="filter" style="width:14px;height:14px;color:var(--brand);"></i> Bộ Lọc Đa Chiều</h3>
+      <button class="btn btn-sm" id="btnResetFilters">Reset bộ lọc</button>
+    </div>
+    <div class="filter-counter">
+      <span>Đang hiển thị:</span>
+      <span id="filterCountText">0 / 0 cấu kiện</span>
+    </div>
+    <div class="slicer-body" id="slicerContainer">
+      <!-- Date Range Filters -->
+      <div class="slicer-group open">
+        <div class="slicer-group-head" onclick="this.parentElement.classList.toggle('open')">
+          <span>Khoảng Thời Gian</span>
+          <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+        </div>
+        <div class="slicer-group-body" style="max-height:none;">
+          <div style="font-size:11px;font-weight:700;color:var(--brand);margin-bottom:4px;">NGÀY NHẬN HÀNG</div>
+          <div class="date-range-grid" style="margin-bottom:10px;">
+            <div class="date-field"><label>Từ ngày</label><input type="date" id="fltNhanFrom" /></div>
+            <div class="date-field"><label>Đến ngày</label><input type="date" id="fltNhanTo" /></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--emerald);margin-bottom:4px;">NGÀY LẮP DỰNG</div>
+          <div class="date-range-grid">
+            <div class="date-field"><label>Từ ngày</label><input type="date" id="fltLapFrom" /></div>
+            <div class="date-field"><label>Đến ngày</label><input type="date" id="fltLapTo" /></div>
+          </div>
+        </div>
+      </div>
+      <!-- Dynamic Categorical Slicers injected here -->
+      <div id="dynamicSlicers"></div>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="main-content">
+    <!-- INITIAL UPLOAD DROPZONE -->
+    <section id="emptyState" class="upload-card">
+      <div class="upload-icon">
+        <i data-lucide="file-spreadsheet" style="width:28px;height:28px;"></i>
+      </div>
+      <h2 style="font-size:18px;margin-bottom:4px;">Nạp Dữ Liệu Báo Cáo Kết Cấu Thép (.xlsx / .csv)</h2>
+      <p style="color:var(--text-muted);max-width:620px;margin:0 auto;">
+        Kéo & thả file Excel vào đây hoặc chọn từ máy tính. Hệ thống xử lý nền qua <b>Web Worker</b> và tự động lưu đệm vào <b>IndexedDB</b> để mở lại tức thì.
+      </p>
+      <div class="upload-path">Đường dẫn tham chiếu: D:\01. DDC\15. Học AI\Test Data\Data_Report.xlsx</div>
+      <div class="upload-actions">
+        <label class="btn btn-primary" for="fileInputMain">
+          <i data-lucide="folder-open" style="width:15px;height:15px;"></i> Chọn File Excel / CSV
+        </label>
+        <input type="file" id="fileInputMain" accept=".xlsx,.xls,.csv" hidden />
+        <button class="btn btn-amber" id="btnDemoHero">
+          <i data-lucide="zap" style="width:15px;height:15px;"></i> Tải Dữ Liệu Mẫu (Demo 50.000 dòng)
+        </button>
+      </div>
+      <div class="progress-box" id="progressMain">
+        <div class="progress-meta">
+          <span id="progressLabelMain">Đang khởi tạo...</span>
+          <span id="progressPctMain">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFillMain"></div></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD CONTENT (Hidden until data loaded) -->
+    <div id="dashboardContent" class="hidden" style="display:flex;flex-direction:column;gap:18px;">
+      <!-- 1. KPI CARDS -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span>Tổng KL Thiết Kế</span>
+            <i data-lucide="layers" style="width:16px;height:16px;color:var(--brand);"></i>
+          </div>
+          <div>
+            <span class="kpi-val" id="kpiTotalTon">0</span><span class="kpi-unit">Tấn</span>
+          </div>
+          <div class="kpi-sub">
+            <span id="kpiTotalCnt">0 cấu kiện</span>
+            <span class="kpi-pill pill-red" id="kpiHoldInfo">Hold: 0 Tấn</span>
+          </div>
+        </div>
+
+        <div class="kpi-card blue">
+          <div class="kpi-top">
+            <span>Đã Nhận Công Trường</span>
+            <i data-lucide="truck" style="width:16px;height:16px;color:#2563EB;"></i>
+          </div>
+          <div>
+            <span class="kpi-val" id="kpiDelivTon">0</span><span class="kpi-unit">Tấn</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="kpiDelivBar" style="width:0%;background:#2563EB;"></div></div>
+          <div class="kpi-sub">
+            <span id="kpiDelivCnt">0 cấu kiện</span>
+            <span class="kpi-pill" style="background:#DBEAFE;color:#1E40AF;" id="kpiDelivPct">0%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card emerald">
+          <div class="kpi-top">
+            <span>Đã Lắp Dựng</span>
+            <i data-lucide="check-circle-2" style="width:16px;height:16px;color:var(--emerald);"></i>
+          </div>
+          <div>
+            <span class="kpi-val" id="kpiErectTon">0</span><span class="kpi-unit">Tấn</span>
+          </div>
+          <div class="kpi-bar"><div class="kpi-bar-fill" id="kpiErectBar" style="width:0%;background:var(--emerald);"></div></div>
+          <div class="kpi-sub">
+            <span id="kpiErectCnt">0 CK • 0%</span>
+            <span class="kpi-pill pill-green" id="kpiPlanVar">KH: --</span>
+          </div>
+        </div>
+
+        <div class="kpi-card amber">
+          <div class="kpi-top">
+            <span>Tồn Kho Công Trường</span>
+            <i data-lucide="package" style="width:16px;height:16px;color:var(--amber);"></i>
+          </div>
+          <div>
+            <span class="kpi-val" id="kpiInvTon">0</span><span class="kpi-unit">Tấn</span>
+          </div>
+          <div class="kpi-sub">
+            <span id="kpiInvCnt">0 cấu kiện chờ lắp</span>
+            <span class="kpi-pill pill-amber" id="kpiInvPct">0% KL</span>
+          </div>
+        </div>
+
+        <div class="kpi-card slate">
+          <div class="kpi-top">
+            <span>Tổng Diện Tích Sơn</span>
+            <i data-lucide="paintbrush" style="width:16px;height:16px;color:#334155;"></i>
+          </div>
+          <div>
+            <span class="kpi-val" id="kpiPaintArea">0</span><span class="kpi-unit">m²</span>
+          </div>
+          <div class="kpi-sub">
+            <span id="kpiPaintAvg">TB: 0 m²/Tấn</span>
+            <span id="kpiFilterSpeed" style="font-size:10.5px;color:#64748B;">0 ms</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. S-CURVE (FULL WIDTH) -->
+      <section class="chart-grid-full">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title"><i data-lucide="trending-up" style="width:16px;height:16px;color:var(--brand);"></i> Đường Cong S (S-Curve: Kế Hoạch vs Thực Tế Lắp Dựng)</div>
+              <div class="card-sub">Kết hợp Kế hoạch lũy kế (Schedule) & Thực tế lắp dựng theo ngày/tuần • Kéo thanh trượt dưới để Zoom</div>
+            </div>
+            <div class="seg-control" id="scurveModeCtrl">
+              <button class="seg-btn active" data-mode="day">Theo Ngày</button>
+              <button class="seg-btn" data-mode="week">Theo Tuần</button>
+            </div>
+          </div>
+          <div id="chartSCurve" class="chart-box tall"></div>
+        </div>
+      </section>
+
+      <!-- 3. STACKED PROGRESS BY DIMENSION + TEAM PERFORMANCE -->
+      <section class="chart-grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title"><i data-lucide="bar-chart-3" style="width:16px;height:16px;color:var(--emerald);"></i> Tiến Độ Theo Phân Nhóm (Tấn)</div>
+              <div class="card-sub">Đã Lắp Dựng | Đã Nhận (Chờ lắp) | Chưa Về Công Trường</div>
+            </div>
+            <div class="seg-control" id="groupAxisCtrl">
+              <button class="seg-btn active" data-col="zone">Zone</button>
+              <button class="seg-btn" data-col="phase">Phase</button>
+              <button class="seg-btn" data-col="hangMucL2">Hạng Mục L2</button>
+              <button class="seg-btn" data-col="heKCT">Hệ KCT</button>
+              <button class="seg-btn" data-col="phanVong">Phân Vòng</button>
+            </div>
+          </div>
+          <div id="chartGroupProgress" class="chart-box"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title"><i data-lucide="users" style="width:16px;height:16px;color:var(--brand);"></i> Năng Suất Đội Thi Công (Kế Hoạch vs Thực Tế)</div>
+              <div class="card-sub">So sánh KL Kế hoạch (Schedule) và KL Đã Lắp (data) theo từng Đội</div>
+            </div>
+          </div>
+          <div id="chartTeams" class="chart-box"></div>
+        </div>
+      </section>
+
+      <!-- 4. SHIFT + FACTORY + QC/HOLD -->
+      <section class="chart-grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title"><i data-lucide="compass" style="width:16px;height:16px;color:#2563EB;"></i> Dự Báo Tiến Độ Lắp Dựng (Thực Tế vs Kế Hoạch)</div>
+              <div class="card-sub" id="forecastSubInfo">Năng suất bình quân thực tế (Tấn/ngày) so với nhịp độ kế hoạch & ngày hoàn thành dự kiến</div>
+            </div>
+          </div>
+          <div id="chartFactories" class="chart-box"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title"><i data-lucide="shield-check" style="width:16px;height:16px;color:var(--amber);"></i> Ca Làm Việc, Nghiệm Thu & Tình Trạng Hold</div>
+              <div class="card-sub">Tỷ trọng khối lượng (Tấn) theo Ca, Nghiệm thu và Hold</div>
+            </div>
+            <div class="seg-control" id="pieModeCtrl">
+              <button class="seg-btn active" data-pie="shift">Ca Làm Việc</button>
+              <button class="seg-btn" data-pie="qc">Nghiệm Thu</button>
+              <button class="seg-btn" data-pie="hold">Tình Trạng Hold</button>
+            </div>
+          </div>
+          <div id="chartQualityShift" class="chart-box"></div>
+        </div>
+      </section>
+
+      <!-- 5. COMPONENT LOOKUP & VIRTUAL TABLE (7 COLUMNS) -->
+      <section class="card">
+        <div class="table-toolbar">
+          <div>
+            <div class="card-title"><i data-lucide="table-2" style="width:16px;height:16px;color:var(--brand);"></i> Tra Cứu Chi Tiết Cấu Kiện (Cuộn Dọc - Virtual Scroll)</div>
+            <div class="card-sub" id="tableCountInfo">Hiển thị 0 cấu kiện</div>
+          </div>
+          <div class="search-wrap">
+            <i data-lucide="search" class="search-icon-left" style="width:15px;height:15px;"></i>
+            <input type="text" id="tableSearchInput" class="search-input" placeholder="Tìm nhanh Member No, Hạng Mục LV 2, Original Mark, Barcode, Số Xe..." autocomplete="off" />
+            <button class="search-clear" id="btnClearSearch" title="Xóa tìm kiếm">✕</button>
+            <div class="autocomplete-list" id="autocompleteList"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm" id="btnExportCSV">
+              <i data-lucide="download" style="width:14px;height:14px;"></i> Xuất CSV
+            </button>
+            <button class="btn btn-emerald btn-sm" id="btnExportXLSX">
+              <i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> Xuất Excel (.xlsx)
+            </button>
+          </div>
+        </div>
+
+        <div class="vtable-outer">
+          <div class="vtable-scroll-x">
+            <div class="vtable-inner">
+              <div class="vtable-header">
+                <div class="vcell">Hạng Mục LV 2</div>
+                <div class="vcell">Member No</div>
+                <div class="vcell num">Length (mm)</div>
+                <div class="vcell num">Weight (Tấn)</div>
+                <div class="vcell center">Ngày Nhận Hàng</div>
+                <div class="vcell center">Ngày Lắp</div>
+                <div class="vcell center">Tình Trạng Lắp</div>
+              </div>
+              <div class="vtable-viewport" id="vtableViewport">
+                <div class="vtable-spacer" id="vtableSpacer">
+                  <div class="vtable-rows" id="vtableRows"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL UPLOAD NEW FILE -->
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="font-size:16px;">Cập Nhật Dữ Liệu Excel Mới</h3>
+      <button class="btn btn-sm" id="btnCloseModal">Đóng</button>
+    </div>
+    <div class="upload-card" id="modalDropzone" style="padding:26px 16px;">
+      <p style="font-weight:600;margin-bottom:6px;">Kéo & thả file Data_Report.xlsx vào đây</p>
+      <div class="upload-path" style="margin:6px 0 14px;">D:\01. DDC\15. Học AI\Test Data\Data_Report.xlsx</div>
+      <div>
+        <label class="btn btn-primary" for="fileInputModal">Chọn File Từ Máy Tính</label>
+        <input type="file" id="fileInputModal" accept=".xlsx,.xls,.csv" hidden />
+      </div>
+      <div class="progress-box" id="progressModal">
+        <div class="progress-meta">
+          <span id="progressLabelModal">Đang đọc file...</span>
+          <span id="progressPctModal">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFillModal"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INLINE WEB WORKER SCRIPT (PARSING EXCEL + DEMO GENERATOR) ===== -->
+<script id="workerCode" type="javascript/worker">
+  importScripts('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+
+  function normKey(s) {
+    return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function parseDateInt(val) {
+    if (val === null || val === undefined || val === '') return 0;
+    if (typeof val === 'number' && val > 20000 && val < 90000) {
+      const utcDays = Math.floor(val - 25569);
+      const d = new Date(utcDays * 86400 * 1000);
+      const y = d.getUTCFullYear();
+      const m = d.getUTCMonth() + 1;
+      const day = d.getUTCDate();
+      return y * 10000 + m * 100 + day;
+    }
+    const s = String(val).trim();
+    if (!s) return 0;
+    let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (m) return (+m[1]) * 10000 + (+m[2]) * 100 + (+m[3]);
+    m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+    if (m) return (+m[3]) * 10000 + (+m[2]) * 100 + (+m[1]);
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    }
+    return 0;
+  }
+
+  function toNum(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    if (v === null || v === undefined || v === '') return 0;
+    const n = parseFloat(String(v).replace(/,/g, '').trim());
+    return isFinite(n) ? n : 0;
+  }
+
+  function createDictBuilder() {
+    const map = new Map();
+    const arr = ['(Trống)'];
+    map.set('(Trống)', 0);
+    return {
+      arr,
+      id(v) {
+        const s = (v === null || v === undefined) ? '' : String(v).trim();
+        if (!s) return 0;
+        let idx = map.get(s);
+        if (idx === undefined) {
+          idx = arr.length;
+          arr.push(s);
+          map.set(s, idx);
+        }
+        return idx;
+      }
+    };
+  }
+
+  function findColIdx(headers, candidates) {
+    for (let c of candidates) {
+      const idx = headers.indexOf(c);
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  self.onmessage = function(e) {
+    const msg = e.data;
+    if (msg.type === 'PARSE_FILE') {
+      try {
+        self.postMessage({ type: 'PROGRESS', pct: 10, label: 'Đang giải nén file Excel (SheetJS)...' });
+        const wb = XLSX.read(msg.buffer, { type: 'array', dense: true });
+        const sheetNames = wb.SheetNames;
+        const dataSheetName = sheetNames.find(n => normKey(n) === 'data') || sheetNames[0];
+        const schedSheetName = sheetNames.find(n => normKey(n) === 'schedule') || (sheetNames.length > 1 ? sheetNames[1] : null);
+
+        self.postMessage({ type: 'PROGRESS', pct: 35, label: 'Đang trích xuất sheet "' + dataSheetName + '"...' });
+        const dataSheet = wb.Sheets[dataSheetName];
+        const rawRows = XLSX.utils.sheet_to_json(dataSheet, { header: 1, raw: true, defval: '' });
+
+        if (!rawRows || rawRows.length < 2) {
+          throw new Error('Sheet dữ liệu trống hoặc không đúng định dạng.');
+        }
+
+        const headers = rawRows[0].map(normKey);
+        const N = rawRows.length - 1;
+        self.postMessage({ type: 'PROGRESS', pct: 55, label: 'Đang nén ' + N.toLocaleString('vi-VN') + ' cấu kiện sang cấu trúc Columnar...' });
+
+        const idxMap = {
+          memberNo: findColIdx(headers, ['member no', 'member_no', 'mã cấu kiện']),
+          revNo: findColIdx(headers, ['rev no', 'rev']),
+          project: findColIdx(headers, ['project', 'dự án']),
+          zone: findColIdx(headers, ['zone']),
+          phase: findColIdx(headers, ['phase']),
+          hold: findColIdx(headers, ['hold']),
+          originalMark: findColIdx(headers, ['original mark']),
+          barcode: findColIdx(headers, ['barcode']),
+          gridPos: findColIdx(headers, ['grid position', 'grid']),
+          elevation: findColIdx(headers, ['elevation']),
+          section: findColIdx(headers, ['section']),
+          material: findColIdx(headers, ['material']),
+          lengthMm: findColIdx(headers, ['length [mm]', 'length (mm)', 'length', 'chiều dài']),
+          weightKg: findColIdx(headers, ['weight [kg]', 'weight (kg)', 'weight']),
+          paintArea: findColIdx(headers, ['paint area [m2]', 'paint area']),
+          soLuong: findColIdx(headers, ['số lượng', 'so luong', 'qty']),
+          danhMuc: findColIdx(headers, ['danh mục', 'danh muc']),
+          hangMucL2: findColIdx(headers, ['hạng mục level 2', 'hang muc level 2', 'hạng mục lv 2', 'hang muc lv 2']),
+          heKCT: findColIdx(headers, ['hệ kct', 'he kct']),
+          phanVong: findColIdx(headers, ['phân vòng', 'phan vong']),
+          doiTC: findColIdx(headers, ['đội thi công', 'doi thi cong']),
+          caLV: findColIdx(headers, ['ca làm việc', 'ca lam viec']),
+          nhaMay: findColIdx(headers, ['nhà máy sản xuất', 'nha may san xuat', 'nhà máy']),
+          ngayXuat: findColIdx(headers, ['ngày xuất hàng', 'ngay xuat hang']),
+          soXe: findColIdx(headers, ['số xe', 'so xe']),
+          viTriHa: findColIdx(headers, ['vị trí hạ hàng', 'vi tri ha hang']),
+          ngayNhan: findColIdx(headers, ['ngày nhận hàng', 'ngay nhan hang']),
+          ngayLap: findColIdx(headers, ['ngày lắp dựng', 'ngay lap dung', 'ngày lắp']),
+          nghiemThu: findColIdx(headers, ['tình trạng nghiệm thu', 'tinh trang nghiem thu']),
+          klNhan: findColIdx(headers, ['kl đã nhận', 'kl da nhan']),
+          klLap: findColIdx(headers, ['kl đã lắp', 'kl da lap']),
+          ghiChu: findColIdx(headers, ['ghi chú', 'ghi chu'])
+        };
+
+        const catCols = ['project','zone','phase','heKCT','hangMucL2','phanVong','doiTC','nhaMay','caLV','hold','nghiemThu','danhMuc'];
+        const dictBuilders = {};
+        const catArrays = {};
+        for (const k of catCols) {
+          dictBuilders[k] = createDictBuilder();
+          catArrays[k] = new Uint16Array(N);
+        }
+
+        const lengthMm = new Float32Array(N);
+        const weightTon = new Float32Array(N);
+        const klNhanRaw = new Float32Array(N);
+        const klLapRaw = new Float32Array(N);
+        const paintArea = new Float32Array(N);
+        const ngayXuat = new Int32Array(N);
+        const ngayNhan = new Int32Array(N);
+        const ngayLap = new Int32Array(N);
+
+        const memberNo = new Array(N);
+        const originalMark = new Array(N);
+        const barcode = new Array(N);
+        const gridPos = new Array(N);
+        const elevation = new Array(N);
+        const section = new Array(N);
+        const soXe = new Array(N);
+
+        let ratioSum = 0, ratioCnt = 0;
+
+        for (let i = 0; i < N; i++) {
+          const r = rawRows[i + 1];
+          for (const k of catCols) {
+            const ci = idxMap[k];
+            catArrays[k][i] = ci >= 0 ? dictBuilders[k].id(r[ci]) : 0;
+          }
+          lengthMm[i] = idxMap.lengthMm >= 0 ? toNum(r[idxMap.lengthMm]) : 0;
+          const wKg = idxMap.weightKg >= 0 ? toNum(r[idxMap.weightKg]) : 0;
+          weightTon[i] = wKg / 1000;
+          const kn = idxMap.klNhan >= 0 ? toNum(r[idxMap.klNhan]) : 0;
+          const kl = idxMap.klLap >= 0 ? toNum(r[idxMap.klLap]) : 0;
+          klNhanRaw[i] = kn;
+          klLapRaw[i] = kl;
+          if (wKg > 0 && kn > 0 && ratioCnt < 500) {
+            ratioSum += (kn / wKg);
+            ratioCnt++;
+          }
+          paintArea[i] = idxMap.paintArea >= 0 ? toNum(r[idxMap.paintArea]) : 0;
+          ngayXuat[i] = idxMap.ngayXuat >= 0 ? parseDateInt(r[idxMap.ngayXuat]) : 0;
+          ngayNhan[i] = idxMap.ngayNhan >= 0 ? parseDateInt(r[idxMap.ngayNhan]) : 0;
+          ngayLap[i] = idxMap.ngayLap >= 0 ? parseDateInt(r[idxMap.ngayLap]) : 0;
+
+          memberNo[i] = idxMap.memberNo >= 0 ? String(r[idxMap.memberNo] || '') : ('CK-' + (i + 1));
+          originalMark[i] = idxMap.originalMark >= 0 ? String(r[idxMap.originalMark] || '') : '';
+          barcode[i] = idxMap.barcode >= 0 ? String(r[idxMap.barcode] || '') : '';
+          gridPos[i] = idxMap.gridPos >= 0 ? String(r[idxMap.gridPos] || '') : '';
+          elevation[i] = idxMap.elevation >= 0 ? String(r[idxMap.elevation] || '') : '';
+          section[i] = idxMap.section >= 0 ? String(r[idxMap.section] || '') : '';
+          soXe[i] = idxMap.soXe >= 0 ? String(r[idxMap.soXe] || '') : '';
+        }
+
+        const avgRatio = ratioCnt > 0 ? (ratioSum / ratioCnt) : 0;
+        if (avgRatio > 0.1) {
+          for (let i = 0; i < N; i++) {
+            klNhanRaw[i] = klNhanRaw[i] / 1000;
+            klLapRaw[i] = klLapRaw[i] / 1000;
+          }
+        }
+
+        self.postMessage({ type: 'PROGRESS', pct: 82, label: 'Đang phân tích sheet Schedule (Kế hoạch)...' });
+        const schedule = [];
+        if (schedSheetName && wb.Sheets[schedSheetName]) {
+          const sRows = XLSX.utils.sheet_to_json(wb.Sheets[schedSheetName], { header: 1, raw: true, defval: '' });
+          if (sRows && sRows.length > 1) {
+            const sh = sRows[0].map(normKey);
+            const si = {
+              hangMuc: findColIdx(sh, ['hạng mục', 'hang muc']),
+              kl: findColIdx(sh, ['kl', 'khối lượng']),
+              doiTC: findColIdx(sh, ['đội thi công', 'doi thi cong']),
+              start: findColIdx(sh, ['ngày bắt đầu', 'ngay bat dau']),
+              end: findColIdx(sh, ['ngày kết thúc', 'ngay ket thuc']),
+              klNgay: findColIdx(sh, ['kl ngày', 'kl ngay']),
+              dataDate: findColIdx(sh, ['data date']),
+              listDate: findColIdx(sh, ['list date']),
+              daLap: findColIdx(sh, ['đã lắp (tấn)', 'da lap (tan)', 'đã lắp'])
+            };
+            for (let i = 1; i < sRows.length; i++) {
+              const r = sRows[i];
+              const lDate = si.listDate >= 0 ? parseDateInt(r[si.listDate]) : 0;
+              const klVal = si.kl >= 0 ? toNum(r[si.kl]) : 0;
+              const klNgayVal = si.klNgay >= 0 ? toNum(r[si.klNgay]) : 0;
+              const doiVal = si.doiTC >= 0 ? String(r[si.doiTC] || '').trim() : '';
+              const dDate = si.dataDate >= 0 ? parseDateInt(r[si.dataDate]) : 0;
+              const daLapVal = si.daLap >= 0 ? toNum(r[si.daLap]) : 0;
+              if (lDate || klVal || klNgayVal || doiVal || dDate) {
+                schedule.push({
+                  hangMuc: si.hangMuc >= 0 ? String(r[si.hangMuc] || '').trim() : '',
+                  kl: klVal,
+                  doiTC: doiVal,
+                  startInt: si.start >= 0 ? parseDateInt(r[si.start]) : 0,
+                  endInt: si.end >= 0 ? parseDateInt(r[si.end]) : 0,
+                  klNgay: klNgayVal,
+                  dataDateInt: dDate,
+                  listDateInt: lDate,
+                  daLapTon: daLapVal
+                });
+              }
+            }
+          }
+        }
+
+        const dicts = {};
+        for (const k of catCols) dicts[k] = dictBuilders[k].arr;
+
+        const payload = {
+          meta: {
+            fileName: msg.fileName || 'Data_Report.xlsx',
+            loadedAt: new Date().toISOString(),
+            rowCount: N
+          },
+          dicts,
+          cols: {
+            ...catArrays,
+            lengthMm,
+            weightTon,
+            klNhanTon: klNhanRaw,
+            klLapTon: klLapRaw,
+            paintArea,
+            ngayXuat,
+            ngayNhan,
+            ngayLap,
+            memberNo,
+            originalMark,
+            barcode,
+            gridPos,
+            elevation,
+            section,
+            soXe
+          },
+          schedule
+        };
+
+        self.postMessage({ type: 'PROGRESS', pct: 96, label: 'Đang chuyển dữ liệu về giao diện...' });
+        const transferables = [
+          lengthMm.buffer, weightTon.buffer, klNhanRaw.buffer, klLapRaw.buffer, paintArea.buffer,
+          ngayXuat.buffer, ngayNhan.buffer, ngayLap.buffer,
+          ...catCols.map(k => catArrays[k].buffer)
+        ];
+        self.postMessage({ type: 'DONE', payload }, transferables);
+      } catch (err) {
+        self.postMessage({ type: 'ERROR', message: err.message || String(err) });
+      }
+    }
+
+    if (msg.type === 'GENERATE_DEMO') {
+      const N = msg.count || 50000;
+      self.postMessage({ type: 'PROGRESS', pct: 15, label: 'Đang khởi tạo ' + N.toLocaleString('vi-VN') + ' cấu kiện thép mẫu...' });
+
+      const dicts = {
+        project: ['(Trống)', 'DỰ ÁN NHÀ MÁY CÔNG NGHỆ CAO DDC - PHASE 2'],
+        zone: ['(Trống)', 'Zone A - Xưởng Chính', 'Zone B - Kho Thành Phẩm', 'Zone C - Nhà Điều Hành', 'Zone D - Cầu Nối', 'Zone E - Trạm Năng Lượng'],
+        phase: ['(Trống)', 'Phase 1', 'Phase 2', 'Phase 3'],
+        heKCT: ['(Trống)', 'Cột Chính (Column)', 'Kèo Mái (Rafter)', 'Dầm Sàn (Beam)', 'Giằng (Bracing)', 'Xà Gồ (Purlin)', 'Sàn Thao Tác (Platform)'],
+        hangMucL2: ['(Trống)', 'Khung Chính Trục 1-15', 'Khung Chính Trục 16-30', 'Hệ Mái & Cửa Trời', 'Hệ Sàn Mezzanine', 'Cầu Trục & Dầm Vai'],
+        phanVong: ['(Trống)', 'Vòng 1', 'Vòng 2', 'Vòng 3', 'Vòng 4'],
+        doiTC: ['(Trống)', 'Đội Lắp Dựng 01 - Hùng Mạnh', 'Đội Lắp Dựng 02 - Thành Công', 'Đội Lắp Dựng 03 - Đại Dũng', 'Đội Lắp Dựng 04 - An Phát', 'Đội Lắp Dựng 05 - Minh Quang'],
+        nhaMay: ['(Trống)', 'NM Long An (DDC-LA)', 'NM Bình Chánh (DDC-BC)', 'NM Nghi Sơn (DDC-NS)', 'NM Vũng Tàu (DDC-VT)'],
+        caLV: ['(Trống)', 'Ca Ngày', 'Ca Đêm'],
+        hold: ['(Trống)', 'Active', 'Hold - Thiết Kế', 'Hold - Mặt Bằng'],
+        nghiemThu: ['(Trống)', 'Đã Nghiệm Thu', 'Chờ Nghiệm Thu', 'Đang Sửa Lỗi (Punchlist)', 'Chưa Lắp'],
+        danhMuc: ['(Trống)', 'Kết Cấu Thép Chính', 'Kết Cấu Thép Phụ']
+      };
+
+      const catCols = Object.keys(dicts);
+      const catArrays = {};
+      for (const k of catCols) catArrays[k] = new Uint16Array(N);
+
+      const lengthMm = new Float32Array(N);
+      const weightTon = new Float32Array(N);
+      const klNhanTon = new Float32Array(N);
+      const klLapTon = new Float32Array(N);
+      const paintArea = new Float32Array(N);
+      const ngayXuat = new Int32Array(N);
+      const ngayNhan = new Int32Array(N);
+      const ngayLap = new Int32Array(N);
+
+      const memberNo = new Array(N);
+      const originalMark = new Array(N);
+      const barcode = new Array(N);
+      const gridPos = new Array(N);
+      const elevation = new Array(N);
+      const section = new Array(N);
+      const soXe = new Array(N);
+
+      const sections = ['H600x300x12x20', 'H500x250x10x16', 'H400x200x8x13', 'I350x175x7x11', 'C200x75x20x2.5', 'BOX400x400x16', 'L100x100x10'];
+      const grids = ['A-1', 'A-2', 'B-5', 'C-10', 'D-14', 'E-20', 'F-25', 'G-30'];
+      const elevs = ['+0.000', '+6.500', '+12.000', '+18.500', '+24.000'];
+      const trucks = ['51C-829.11', '51D-442.09', '62C-109.88', '50H-331.45', '51C-990.21', '62H-018.77', '51D-774.32'];
+
+      const baseTime = Date.UTC(2026, 7, 1);
+      const dateInts = [];
+      for (let d = 0; d < 120; d++) {
+        const dt = new Date(baseTime + d * 86400000);
+        dateInts.push(dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate());
+      }
+      const dataDateIdx = 78;
+      const dataDateInt = dateInts[dataDateIdx];
+
+      let seed = 123456789;
+      function rnd() {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+      }
+
+      const teamActualSums = new Float64Array(6);
+
+      for (let i = 0; i < N; i++) {
+        catArrays.project[i] = 1;
+        catArrays.zone[i] = 1 + Math.floor(rnd() * 5);
+        catArrays.phase[i] = 1 + Math.floor(rnd() * 3);
+        const kct = 1 + Math.floor(rnd() * 6);
+        catArrays.heKCT[i] = kct;
+        catArrays.hangMucL2[i] = 1 + Math.floor(rnd() * 5);
+        catArrays.phanVong[i] = 1 + Math.floor(rnd() * 4);
+        const team = 1 + Math.floor(rnd() * 5);
+        catArrays.doiTC[i] = team;
+        catArrays.nhaMay[i] = 1 + Math.floor(rnd() * 4);
+        catArrays.caLV[i] = rnd() < 0.74 ? 1 : 2;
+        catArrays.danhMuc[i] = kct <= 3 ? 1 : 2;
+
+        lengthMm[i] = Math.round(kct <= 3 ? (4500 + rnd() * 7500) : (1200 + rnd() * 4800));
+        const wKg = kct <= 3 ? (350 + rnd() * 2400) : (40 + rnd() * 320);
+        const wT = wKg / 1000;
+        weightTon[i] = wT;
+        paintArea[i] = wT * (18 + rnd() * 12);
+
+        const isHold = rnd() < 0.045;
+        catArrays.hold[i] = isHold ? (rnd() < 0.6 ? 2 : 3) : 1;
+
+        const rProg = rnd();
+        if (!isHold && rProg < 0.64) {
+          const dLapIdx = Math.floor(Math.pow(rnd(), 0.85) * (dataDateIdx + 1));
+          const dNhanIdx = Math.max(0, dLapIdx - (2 + Math.floor(rnd() * 8)));
+          const dXuatIdx = Math.max(0, dNhanIdx - 1);
+          ngayXuat[i] = dateInts[dXuatIdx];
+          ngayNhan[i] = dateInts[dNhanIdx];
+          ngayLap[i] = dateInts[dLapIdx];
+          klNhanTon[i] = wT;
+          klLapTon[i] = wT;
+          teamActualSums[team] += wT;
+          catArrays.nghiemThu[i] = rnd() < 0.82 ? 1 : (rnd() < 0.8 ? 2 : 3);
+          soXe[i] = trucks[i % trucks.length];
+        } else if (!isHold && rProg < 0.82) {
+          const dNhanIdx = Math.floor(rnd() * (dataDateIdx + 1));
+          ngayXuat[i] = dateInts[Math.max(0, dNhanIdx - 1)];
+          ngayNhan[i] = dateInts[dNhanIdx];
+          ngayLap[i] = 0;
+          klNhanTon[i] = wT;
+          klLapTon[i] = 0;
+          catArrays.nghiemThu[i] = 4;
+          soXe[i] = trucks[(i * 3) % trucks.length];
+        } else {
+          ngayXuat[i] = 0;
+          ngayNhan[i] = 0;
+          ngayLap[i] = 0;
+          klNhanTon[i] = 0;
+          klLapTon[i] = 0;
+          catArrays.nghiemThu[i] = 4;
+          soXe[i] = '';
+        }
+
+        const pfx = ['C','R','B','BR','P','PL'][kct - 1];
+        memberNo[i] = pfx + '-' + String(100000 + i);
+        originalMark[i] = pfx + 'M' + ((i % 450) + 1);
+        barcode[i] = 'DDC' + String(8000000 + i);
+        gridPos[i] = grids[i % grids.length];
+        elevation[i] = elevs[i % elevs.length];
+        section[i] = sections[i % sections.length];
+      }
+
+      self.postMessage({ type: 'PROGRESS', pct: 78, label: 'Đang tạo dữ liệu Kế hoạch (Schedule)...' });
+
+      let totalDesignTon = 0;
+      for (let i = 0; i < N; i++) totalDesignTon += weightTon[i];
+
+      const schedule = [];
+      let bellSum = 0;
+      const bell = [];
+      for (let d = 0; d < 110; d++) {
+        const x = (d - 55) / 24;
+        const v = Math.exp(-0.5 * x * x);
+        bell.push(v);
+        bellSum += v;
+      }
+      for (let d = 0; d < 110; d++) {
+        const klNgay = (bell[d] / bellSum) * totalDesignTon;
+        const teamIdx = 1 + (d % 5);
+        schedule.push({
+          hangMuc: dicts.hangMucL2[1 + (d % 5)],
+          kl: 0,
+          doiTC: dicts.doiTC[teamIdx],
+          startInt: dateInts[0],
+          endInt: dateInts[109],
+          klNgay: klNgay,
+          dataDateInt: dataDateInt,
+          listDateInt: dateInts[d],
+          daLapTon: 0
+        });
+      }
+      for (let t = 1; t <= 5; t++) {
+        schedule.push({
+          hangMuc: 'Kế hoạch Đội ' + t,
+          kl: teamActualSums[t] * (0.92 + (t % 3) * 0.08),
+          doiTC: dicts.doiTC[t],
+          startInt: dateInts[0],
+          endInt: dateInts[109],
+          klNgay: 0,
+          dataDateInt: dataDateInt,
+          listDateInt: 0,
+          daLapTon: teamActualSums[t]
+        });
+      }
+
+      const payload = {
+        meta: {
+          fileName: 'Demo_Steel_50K_Rows.xlsx (Dữ liệu mô phỏng)',
+          loadedAt: new Date().toISOString(),
+          rowCount: N
+        },
+        dicts,
+        cols: {
+          ...catArrays,
+          lengthMm,
+          weightTon,
+          klNhanTon,
+          klLapTon,
+          paintArea,
+          ngayXuat,
+          ngayNhan,
+          ngayLap,
+          memberNo,
+          originalMark,
+          barcode,
+          gridPos,
+          elevation,
+          section,
+          soXe
+        },
+        schedule
+      };
+
+      const transferables = [
+        lengthMm.buffer, weightTon.buffer, klNhanTon.buffer, klLapTon.buffer, paintArea.buffer,
+        ngayXuat.buffer, ngayNhan.buffer, ngayLap.buffer,
+        ...catCols.map(k => catArrays[k].buffer)
+      ];
+      self.postMessage({ type: 'DONE', payload }, transferables);
+    }
+  };
+</script>
+
+<!-- ===== MAIN APPLICATION LOGIC ===== -->
+<script>
+(() => {
+  'use strict';
+
+  let STORE = null;
+  let FILTERED_INDICES = null;
+  let TABLE_INDICES = null;
+  let ACTIVE_FILTERS = {};
+  let DATE_FILTERS = { nhanFrom: 0, nhanTo: 0, lapFrom: 0, lapTo: 0 };
+  let CURRENT_GROUP_COL = 'zone';
+  let CURRENT_SCURVE_MODE = 'day';
+  let CURRENT_PIE_MODE = 'shift';
+  let SEARCH_TERM = '';
+  let DATA_DATE_INT = 0;
+
+  const SLICER_CONFIG = [
+    { key: 'project', label: 'Project (Dự Án)' },
+    { key: 'zone', label: 'Zone' },
+    { key: 'phase', label: 'Phase' },
+    { key: 'heKCT', label: 'Hệ KCT' },
+    { key: 'hangMucL2', label: 'Hạng Mục Level 2' },
+    { key: 'phanVong', label: 'Phân Vòng' },
+    { key: 'doiTC', label: 'Đội Thi Công' },
+    { key: 'nhaMay', label: 'Nhà Máy Sản Xuất' },
+    { key: 'caLV', label: 'Ca Làm Việc' },
+    { key: 'hold', label: 'Trạng Thái Hold' },
+    { key: 'nghiemThu', label: 'Tình Trạng Nghiệm Thu' }
+  ];
+
+  const charts = {};
+
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const fmtNum = (n, dec = 2) => Number(n || 0).toLocaleString('vi-VN', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const fmtInt = (n) => Math.round(Number(n || 0)).toLocaleString('vi-VN');
+  const intToDateStr = (v) => {
+    if (!v || v < 19000101) return '';
+    const y = Math.floor(v / 10000);
+    const m = Math.floor((v % 10000) / 100);
+    const d = v % 100;
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  };
+  const intToVNDate = (v) => {
+    if (!v || v < 19000101) return '-';
+    const y = Math.floor(v / 10000);
+    const m = Math.floor((v % 10000) / 100);
+    const d = v % 100;
+    return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+  };
+  const inputDateToInt = (s) => s ? parseInt(s.replace(/-/g, ''), 10) : 0;
+  const getWeekKey = (dateInt) => {
+    const y = Math.floor(dateInt / 10000);
+    const m = Math.floor((dateInt % 10000) / 100) - 1;
+    const d = dateInt % 100;
+    const dt = new Date(Date.UTC(y, m, d));
+    const dayNum = dt.getUTCDay() || 7;
+    dt.setUTCDate(dt.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+    return `${dt.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  };
+
+  const DB_NAME = 'SteelExecDashboardDB_v2';
+  const DB_STORE = 'datasets';
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function saveToCache(payload) {
+    try {
+      const db = await openDB();
+      await new Promise((res, rej) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(payload, 'latest');
+        tx.oncomplete = res;
+        tx.onerror = () => rej(tx.error);
+      });
+    } catch (e) { console.warn('IndexedDB save skipped:', e); }
+  }
+  async function loadFromCache() {
+    try {
+      const db = await openDB();
+      return await new Promise((res, rej) => {
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const req = tx.objectStore(DB_STORE).get('latest');
+        req.onsuccess = () => res(req.result || null);
+        req.onerror = () => rej(req.error);
+      });
+    } catch (e) { return null; }
+  }
+  async function clearCache() {
+    const db = await openDB();
+    await new Promise((res) => {
+      const tx = db.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).delete('latest');
+      tx.oncomplete = res;
+    });
+    location.reload();
+  }
+
+  function createWorker() {
+    const code = document.getElementById('workerCode').textContent;
+    const blob = new Blob([code], { type: 'application/javascript' });
+    return new Worker(URL.createObjectURL(blob));
+  }
+
+  function setProgress(pct, label, isModal = false) {
+    const box = document.getElementById(isModal ? 'progressModal' : 'progressMain');
+    const lbl = document.getElementById(isModal ? 'progressLabelModal' : 'progressLabelMain');
+    const pctEl = document.getElementById(isModal ? 'progressPctModal' : 'progressPctMain');
+    const fill = document.getElementById(isModal ? 'progressFillModal' : 'progressFillMain');
+    box.classList.add('active');
+    lbl.textContent = label;
+    pctEl.textContent = pct + '%';
+    fill.style.width = pct + '%';
+  }
+
+  function runWorkerTask(message, transfer = [], isModal = false) {
+    setProgress(5, 'Đang khởi chạy Web Worker...', isModal);
+    const worker = createWorker();
+    worker.onmessage = async (e) => {
+      const d = e.data;
+      if (d.type === 'PROGRESS') {
+        setProgress(d.pct, d.label, isModal);
+      } else if (d.type === 'DONE') {
+        setProgress(100, 'Hoàn tất! Đang lưu cache & dựng biểu đồ...', isModal);
+        worker.terminate();
+        await saveToCache(d.payload);
+        initDashboardWithData(d.payload);
+        document.getElementById('uploadModal').classList.remove('open');
+        document.getElementById('progressMain').classList.remove('active');
+        document.getElementById('progressModal').classList.remove('active');
+      } else if (d.type === 'ERROR') {
+        worker.terminate();
+        alert('Lỗi đọc dữ liệu: ' + d.message);
+        document.getElementById('progressMain').classList.remove('active');
+        document.getElementById('progressModal').classList.remove('active');
+      }
+    };
+    worker.onerror = (err) => {
+      alert('Lỗi Web Worker: ' + err.message);
+      worker.terminate();
+    };
+    worker.postMessage(message, transfer);
+  }
+
+  function handleFileUpload(file, isModal = false) {
+    if (!file) return;
+    setProgress(4, 'Đang đọc file từ ổ đĩa (' + (file.size / 1048576).toFixed(1) + ' MB)...', isModal);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const buf = e.target.result;
+      runWorkerTask({ type: 'PARSE_FILE', buffer: buf, fileName: file.name }, [buf], isModal);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function initDashboardWithData(payload) {
+    STORE = payload;
+    ACTIVE_FILTERS = {};
+    DATE_FILTERS = { nhanFrom: 0, nhanTo: 0, lapFrom: 0, lapTo: 0 };
+    SEARCH_TERM = '';
+    document.getElementById('tableSearchInput').value = '';
+    document.getElementById('fltNhanFrom').value = '';
+    document.getElementById('fltNhanTo').value = '';
+    document.getElementById('fltLapFrom').value = '';
+    document.getElementById('fltLapTo').value = '';
+
+    DATA_DATE_INT = 0;
+    for (const s of STORE.schedule) {
+      if (s.dataDateInt > DATA_DATE_INT) DATA_DATE_INT = s.dataDateInt;
+    }
+    if (!DATA_DATE_INT) {
+      const lap = STORE.cols.ngayLap;
+      for (let i = 0; i < STORE.meta.rowCount; i++) {
+        if (lap[i] > DATA_DATE_INT) DATA_DATE_INT = lap[i];
+      }
+    }
+
+    const projNames = STORE.dicts.project.filter(x => x !== '(Trống)');
+    document.getElementById('hdrProjectName').textContent = projNames[0] || 'BÁO CÁO ĐIỀU HÀNH KẾT CẤU THÉP';
+    document.getElementById('hdrDataDate').textContent = 'Data Date: ' + (DATA_DATE_INT ? intToVNDate(DATA_DATE_INT) : '--/--/----');
+    document.getElementById('hdrSubInfo').textContent =
+      `Nguồn: ${STORE.meta.fileName} • ${fmtInt(STORE.meta.rowCount)} cấu kiện • Lưu đệm IndexedDB`;
+
+    document.getElementById('emptyState').classList.add('hidden');
+    document.getElementById('dashboardContent').classList.remove('hidden');
+
+    initEChartsInstances();
+    buildSlicersUI();
+    updateTicker();
+    applyFiltersAndRender();
+    requestAnimationFrame(() => {
+      Object.values(charts).forEach(ch => ch && ch.resize());
+    });
+  }
+
+  function initEChartsInstances() {
+    const ids = ['chartSCurve', 'chartGroupProgress', 'chartTeams', 'chartFactories', 'chartQualityShift'];
+    for (const id of ids) {
+      if (!charts[id]) {
+        charts[id] = echarts.init(document.getElementById(id));
+        const origSetOption = charts[id].setOption.bind(charts[id]);
+        charts[id].setOption = (opt, notMerge) => {
+          opt = Object.assign({ textStyle: { fontFamily: "'Times New Roman', Times, serif" } }, opt);
+          return origSetOption(opt, notMerge);
+        };
+      }
+    }
+  }
+
+  function updateTicker() {
+    const N = STORE.meta.rowCount;
+    const { ngayNhan, ngayLap, klNhanTon, klLapTon, doiTC, soXe } = STORE.cols;
+    let latestDate = 0;
+    for (let i = 0; i < N; i++) {
+      if (ngayLap[i] > latestDate) latestDate = ngayLap[i];
+      if (ngayNhan[i] > latestDate) latestDate = ngayNhan[i];
+    }
+    if (!latestDate) return;
+
+    let delivTon = 0, erectTon = 0, erectCnt = 0;
+    const truckSet = new Set();
+    const teamSum = new Float64Array(STORE.dicts.doiTC.length);
+
+    for (let i = 0; i < N; i++) {
+      if (ngayNhan[i] === latestDate) {
+        delivTon += klNhanTon[i];
+        if (soXe[i]) truckSet.add(soXe[i]);
+      }
+      if (ngayLap[i] === latestDate) {
+        erectTon += klLapTon[i];
+        erectCnt++;
+        teamSum[doiTC[i]] += klLapTon[i];
+      }
+    }
+    let bestTeam = 'N/A', bestVal = 0;
+    for (let t = 1; t < teamSum.length; t++) {
+      if (teamSum[t] > bestVal) { bestVal = teamSum[t]; bestTeam = STORE.dicts.doiTC[t]; }
+    }
+    document.getElementById('tickerText').innerHTML =
+      `Ngày <span class="ticker-highlight">${intToVNDate(latestDate)}</span>: ` +
+      `Đã nhận <span class="ticker-highlight">${fmtNum(delivTon)} tấn</span> (${fmtInt(truckSet.size)} chuyến xe) &nbsp;|&nbsp; ` +
+      `Đã lắp dựng <span class="ticker-green">${fmtNum(erectTon)} tấn</span> (${fmtInt(erectCnt)} cấu kiện) &nbsp;|&nbsp; ` +
+      `Đội dẫn đầu ngày: <span class="ticker-green">${esc(bestTeam)}</span> (${fmtNum(bestVal)} tấn) &nbsp;|&nbsp; ` +
+      `Tổng quy mô dự án: <span class="ticker-highlight">${fmtInt(N)} cấu kiện</span>`;
+  }
+
+  function buildSlicersUI() {
+    const container = document.getElementById('dynamicSlicers');
+    container.innerHTML = '';
+    const N = STORE.meta.rowCount;
+
+    for (const cfg of SLICER_CONFIG) {
+      const dict = STORE.dicts[cfg.key];
+      const colArr = STORE.cols[cfg.key];
+      const counts = new Uint32Array(dict.length);
+      for (let i = 0; i < N; i++) counts[colArr[i]]++;
+
+      const grp = document.createElement('div');
+      grp.className = 'slicer-group' + (cfg.key === 'zone' || cfg.key === 'doiTC' ? ' open' : '');
+      grp.dataset.key = cfg.key;
+
+      grp.innerHTML = `
+        <div class="slicer-group-head">
+          <span>${esc(cfg.label)}</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="slicer-badge" id="badge_${cfg.key}">0</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+          </div>
+        </div>
+        <div class="slicer-group-body">
+          <input type="text" class="slicer-search" placeholder="Lọc nhanh ${esc(cfg.label)}..." />
+          <div class="slicer-opts"></div>
+        </div>
+      `;
+
+      grp.querySelector('.slicer-group-head').addEventListener('click', () => grp.classList.toggle('open'));
+
+      const optsDiv = grp.querySelector('.slicer-opts');
+      const items = [];
+      for (let id = 0; id < dict.length; id++) {
+        if (counts[id] > 0) items.push({ id, name: dict[id], cnt: counts[id] });
+      }
+      items.sort((a, b) => b.cnt - a.cnt);
+
+      const frag = document.createDocumentFragment();
+      for (const it of items) {
+        const row = document.createElement('div');
+        row.className = 'slicer-opt';
+        row.dataset.name = it.name.toLowerCase();
+        row.innerHTML = `
+          <label>
+            <input type="checkbox" value="${it.id}" />
+            <span title="${esc(it.name)}">${esc(it.name)}</span>
+          </label>
+          <span class="slicer-opt-cnt">${fmtInt(it.cnt)}</span>
+        `;
+        const cb = row.querySelector('input');
+        cb.addEventListener('change', () => {
+          if (!ACTIVE_FILTERS[cfg.key]) ACTIVE_FILTERS[cfg.key] = new Set();
+          if (cb.checked) ACTIVE_FILTERS[cfg.key].add(it.id);
+          else ACTIVE_FILTERS[cfg.key].delete(it.id);
+          if (ACTIVE_FILTERS[cfg.key].size === 0) delete ACTIVE_FILTERS[cfg.key];
+          const b = document.getElementById('badge_' + cfg.key);
+          const sz = ACTIVE_FILTERS[cfg.key] ? ACTIVE_FILTERS[cfg.key].size : 0;
+          b.textContent = sz;
+          b.classList.toggle('active', sz > 0);
+          applyFiltersAndRender();
+        });
+        frag.appendChild(row);
+      }
+      optsDiv.appendChild(frag);
+
+      grp.querySelector('.slicer-search').addEventListener('input', (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        for (const el of optsDiv.children) {
+          el.style.display = !q || el.dataset.name.includes(q) ? 'flex' : 'none';
+        }
+      });
+
+      container.appendChild(grp);
+    }
+    lucide.createIcons();
+  }
+
+  function applyFiltersAndRender() {
+    if (!STORE) return;
+    const t0 = performance.now();
+    const N = STORE.meta.rowCount;
+    const cols = STORE.cols;
+
+    const activeKeys = Object.keys(ACTIVE_FILTERS);
+    const filterArrays = [];
+    const filterMasks = [];
+    for (const k of activeKeys) {
+      const mask = new Uint8Array(STORE.dicts[k].length);
+      for (const id of ACTIVE_FILTERS[k]) mask[id] = 1;
+      filterArrays.push(cols[k]);
+      filterMasks.push(mask);
+    }
+    const numCat = activeKeys.length;
+    const { nhanFrom, nhanTo, lapFrom, lapTo } = DATE_FILTERS;
+    const hasDate = nhanFrom || nhanTo || lapFrom || lapTo;
+    const ngayNhan = cols.ngayNhan;
+    const ngayLap = cols.ngayLap;
+
+    const tmpIdx = new Int32Array(N);
+    let count = 0;
+
+    for (let i = 0; i < N; i++) {
+      let ok = true;
+      for (let f = 0; f < numCat; f++) {
+        if (!filterMasks[f][filterArrays[f][i]]) { ok = false; break; }
+      }
+      if (!ok) continue;
+      if (hasDate) {
+        if (nhanFrom && (ngayNhan[i] === 0 || ngayNhan[i] < nhanFrom)) continue;
+        if (nhanTo && (ngayNhan[i] === 0 || ngayNhan[i] > nhanTo)) continue;
+        if (lapFrom && (ngayLap[i] === 0 || ngayLap[i] < lapFrom)) continue;
+        if (lapTo && (ngayLap[i] === 0 || ngayLap[i] > lapTo)) continue;
+      }
+      tmpIdx[count++] = i;
+    }
+
+    FILTERED_INDICES = tmpIdx.subarray(0, count);
+    document.getElementById('filterCountText').textContent = `${fmtInt(count)} / ${fmtInt(N)} cấu kiện`;
+
+    renderKPIsAndCharts(t0);
+    applyTableSearch();
+  }
+
+  function renderKPIsAndCharts(t0) {
+    const idx = FILTERED_INDICES;
+    const M = idx.length;
+    const c = STORE.cols;
+    const d = STORE.dicts;
+
+    const holdMask = new Uint8Array(d.hold.length);
+    for (let i = 0; i < d.hold.length; i++) {
+      const s = d.hold[i].toLowerCase();
+      if (s.includes('hold') || s === 'yes' || s === 'y' || s === '1') holdMask[i] = 1;
+    }
+
+    let totalTon = 0, holdTon = 0, delivTon = 0, delivCnt = 0, erectTon = 0, erectCnt = 0, paintSum = 0;
+    let invCnt = 0;
+
+    const gDict = d[CURRENT_GROUP_COL];
+    const gCol = c[CURRENT_GROUP_COL];
+    const gErect = new Float64Array(gDict.length);
+    const gInv = new Float64Array(gDict.length);
+    const gRem = new Float64Array(gDict.length);
+
+    const tDict = d.doiTC;
+    const tErect = new Float64Array(tDict.length);
+
+    const fDict = d.nhaMay;
+    const fTotal = new Float64Array(fDict.length);
+    const fDeliv = new Float64Array(fDict.length);
+
+    const pieKey = CURRENT_PIE_MODE === 'shift' ? 'caLV' : (CURRENT_PIE_MODE === 'qc' ? 'nghiemThu' : 'hold');
+    const pDict = d[pieKey];
+    const pCol = c[pieKey];
+    const pSum = new Float64Array(pDict.length);
+
+    // Classify Ca Làm Việc dictionary IDs into Ca Đêm vs Ca Ngày
+    const isNightMask = new Uint8Array(d.caLV.length);
+    for (let i = 0; i < d.caLV.length; i++) {
+      const s = d.caLV[i].toLowerCase();
+      if (s.includes('đêm') || s.includes('dem') || s.includes('night') || s.includes('ca 2') || s.includes('ca 3')) {
+        isNightMask[i] = 1;
+      }
+    }
+
+    const actualDayByDate = new Map();
+    const actualNightByDate = new Map();
+
+    for (let k = 0; k < M; k++) {
+      const i = idx[k];
+      const w = c.weightTon[i];
+      const kn = c.klNhanTon[i];
+      const kl = c.klLapTon[i];
+      const isH = holdMask[c.hold[i]];
+
+      totalTon += w;
+      if (isH) holdTon += w;
+      if (kn > 0) { delivTon += kn; delivCnt++; }
+      if (kl > 0) { erectTon += kl; erectCnt++; }
+      if (kn > kl + 0.0001) invCnt++;
+      paintSum += c.paintArea[i];
+
+      const gi = gCol[i];
+      const invW = Math.max(0, kn - kl);
+      const remW = Math.max(0, w - Math.max(kn, kl));
+      gErect[gi] += kl;
+      gInv[gi] += invW;
+      gRem[gi] += remW;
+
+      tErect[c.doiTC[i]] += kl;
+
+      const fi = c.nhaMay[i];
+      fTotal[fi] += w;
+      fDeliv[fi] += kn;
+
+      pSum[pCol[i]] += (CURRENT_PIE_MODE === 'shift' ? kl : w);
+
+      const dl = c.ngayLap[i];
+      if (dl > 0 && kl > 0) {
+        if (isNightMask[c.caLV[i]]) {
+          actualNightByDate.set(dl, (actualNightByDate.get(dl) || 0) + kl);
+        } else {
+          actualDayByDate.set(dl, (actualDayByDate.get(dl) || 0) + kl);
+        }
+      }
+    }
+
+    const invTon = Math.max(0, delivTon - erectTon);
+    const delivPct = totalTon > 0 ? (delivTon / totalTon) * 100 : 0;
+    const erectPct = totalTon > 0 ? (erectTon / totalTon) * 100 : 0;
+    const invPct = totalTon > 0 ? (invTon / totalTon) * 100 : 0;
+
+    let planAtDataDate = 0;
+    for (const s of STORE.schedule) {
+      if (s.listDateInt > 0 && s.listDateInt <= DATA_DATE_INT && s.klNgay > 0) {
+        planAtDataDate += s.klNgay;
+      }
+    }
+    const variance = planAtDataDate > 0 ? (erectTon - planAtDataDate) : 0;
+
+    document.getElementById('kpiTotalTon').textContent = fmtNum(totalTon);
+    document.getElementById('kpiTotalCnt').textContent = fmtInt(M) + ' cấu kiện';
+    document.getElementById('kpiHoldInfo').textContent = `Hold: ${fmtNum(holdTon)} T`;
+
+    document.getElementById('kpiDelivTon').textContent = fmtNum(delivTon);
+    document.getElementById('kpiDelivCnt').textContent = fmtInt(delivCnt) + ' cấu kiện';
+    document.getElementById('kpiDelivPct').textContent = fmtNum(delivPct, 1) + '%';
+    document.getElementById('kpiDelivBar').style.width = Math.min(100, delivPct) + '%';
+
+    document.getElementById('kpiErectTon').textContent = fmtNum(erectTon);
+    document.getElementById('kpiErectCnt').textContent = `${fmtInt(erectCnt)} CK • ${fmtNum(erectPct, 1)}%`;
+    document.getElementById('kpiErectBar').style.width = Math.min(100, erectPct) + '%';
+    const varEl = document.getElementById('kpiPlanVar');
+    if (planAtDataDate > 0) {
+      const sign = variance >= 0 ? '+' : '';
+      varEl.textContent = `${sign}${fmtNum(variance, 1)} T vs KH`;
+      varEl.className = 'kpi-pill ' + (variance >= 0 ? 'pill-green' : 'pill-red');
+    } else {
+      varEl.textContent = 'Không có KH';
+      varEl.className = 'kpi-pill pill-amber';
+    }
+
+    document.getElementById('kpiInvTon').textContent = fmtNum(invTon);
+    document.getElementById('kpiInvCnt').textContent = fmtInt(invCnt) + ' cấu kiện chờ lắp';
+    document.getElementById('kpiInvPct').textContent = fmtNum(invPct, 1) + '% KL';
+
+    document.getElementById('kpiPaintArea').textContent = fmtNum(paintSum, 0);
+    document.getElementById('kpiPaintAvg').textContent = `TB: ${totalTon > 0 ? fmtNum(paintSum / totalTon, 1) : 0} m²/Tấn`;
+    document.getElementById('kpiFilterSpeed').textContent = `Xử lý: ${(performance.now() - t0).toFixed(1)} ms`;
+
+    renderSCurveChart(actualDayByDate, actualNightByDate);
+    renderGroupChart(gDict, gErect, gInv, gRem);
+    renderTeamChart(tDict, tErect);
+    renderForecastChart(fDict, fTotal, fDeliv);
+    renderPieChart(pDict, pSum);
+  }
+
+  function renderSCurveChart(actualDayByDate, actualNightByDate) {
+    const planByDate = new Map();
+    for (const s of STORE.schedule) {
+      if (s.listDateInt > 0 && s.klNgay > 0) {
+        planByDate.set(s.listDateInt, (planByDate.get(s.listDateInt) || 0) + s.klNgay);
+      }
+    }
+    const allDates = Array.from(new Set([...planByDate.keys(), ...actualDayByDate.keys(), ...actualNightByDate.keys()])).sort((a, b) => a - b);
+
+    const bucketPlan = new Map();
+    const bucketDay = new Map();
+    const bucketNight = new Map();
+    const labels = [];
+
+    for (const dt of allDates) {
+      const key = CURRENT_SCURVE_MODE === 'week' ? getWeekKey(dt) : intToDateStr(dt);
+      if (!bucketPlan.has(key)) {
+        bucketPlan.set(key, 0);
+        bucketDay.set(key, 0);
+        bucketNight.set(key, 0);
+        labels.push(key);
+      }
+      bucketPlan.set(key, bucketPlan.get(key) + (planByDate.get(dt) || 0));
+      bucketDay.set(key, bucketDay.get(key) + (actualDayByDate.get(dt) || 0));
+      bucketNight.set(key, bucketNight.get(key) + (actualNightByDate.get(dt) || 0));
+    }
+
+    const cumPlan = [], cumAct = [], barDay = [], barNight = [];
+    let pAcc = 0, aAcc = 0;
+    const maxActDateKey = allDates.length ? (CURRENT_SCURVE_MODE === 'week' ? getWeekKey(DATA_DATE_INT) : intToDateStr(DATA_DATE_INT)) : '';
+
+    for (const lb of labels) {
+      const p = bucketPlan.get(lb) || 0;
+      const dVal = bucketDay.get(lb) || 0;
+      const nVal = bucketNight.get(lb) || 0;
+      pAcc += p;
+      cumPlan.push(+pAcc.toFixed(2));
+      if (!maxActDateKey || lb <= maxActDateKey) {
+        aAcc += (dVal + nVal);
+        cumAct.push(+aAcc.toFixed(2));
+        barDay.push(+dVal.toFixed(2));
+        barNight.push(+nVal.toFixed(2));
+      } else {
+        cumAct.push(null);
+        barDay.push(0);
+        barNight.push(0);
+      }
+    }
+
+    charts.chartSCurve.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' },
+        formatter: (params) => {
+          if (!params || !params.length) return '';
+          let html = `<div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid #E2E8F0;padding-bottom:3px;">${params[0].axisValue}</div>`;
+          let shiftTotal = 0;
+          for (const p of params) {
+            const v = (p.value === null || p.value === undefined) ? '-' : Number(p.value).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Tấn';
+            if (p.seriesName.includes('Ca Ngày') || p.seriesName.includes('Ca Đêm')) shiftTotal += Number(p.value || 0);
+            html += `<div style="display:flex;justify-content:space-between;gap:14px;"><span>${p.marker} ${p.seriesName}</span><b>${v}</b></div>`;
+          }
+          if (shiftTotal > 0) {
+            html += `<div style="display:flex;justify-content:space-between;gap:14px;margin-top:3px;padding-top:3px;border-top:1px dashed #CBD5E1;color:#059669;"><span>Tổng Lắp Trong Kỳ (Ngày + Đêm)</span><b>${shiftTotal.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Tấn</b></div>`;
+          }
+          return html;
+        }
+      },
+      legend: { top: 0, data: ['Kế Hoạch Lũy Kế (Tấn)', 'Thực Tế Lũy Kế (Tấn)', 'Lắp Dựng Ca Ngày (Tấn)', 'Lắp Dựng Ca Đêm (Tấn)'] },
+      grid: { left: 60, right: 60, top: 42, bottom: 60 },
+      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 22, bottom: 8 }],
+      xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 11 } },
+      yAxis: [
+        { type: 'value', name: 'Lũy kế (Tấn)', splitLine: { lineStyle: { type: 'dashed' } } },
+        { type: 'value', name: 'Kỳ (Tấn)', splitLine: { show: false } }
+      ],
+      series: [
+        {
+          name: 'Lắp Dựng Ca Ngày (Tấn)',
+          type: 'bar',
+          stack: 'shiftBar',
+          yAxisIndex: 1,
+          data: barDay,
+          label: {
+            show: true,
+            position: 'inside',
+            fontSize: 9.5,
+            fontWeight: 'bold',
+            color: '#78350F',
+            formatter: p => p.value > 0 ? `N: ${p.value.toLocaleString('vi-VN', {maximumFractionDigits:1})}` : ''
+          },
+          itemStyle: { color: 'rgba(245, 158, 11, 0.55)' }
+        },
+        {
+          name: 'Lắp Dựng Ca Đêm (Tấn)',
+          type: 'bar',
+          stack: 'shiftBar',
+          yAxisIndex: 1,
+          data: barNight,
+          label: {
+            show: true,
+            position: 'inside',
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: '#FFFFFF',
+            formatter: (p) => {
+              const idx = p.dataIndex;
+              const nVal = barNight[idx] || 0;
+              const dVal = barDay[idx] || 0;
+              if (nVal > 0) return `Đ: ${nVal.toLocaleString('vi-VN', {maximumFractionDigits:1})}`;
+              if (dVal > 0) return `N: ${dVal.toLocaleString('vi-VN', {maximumFractionDigits:1})}`;
+              return '';
+            }
+          },
+          itemStyle: { color: 'rgba(30, 58, 138, 0.65)', borderRadius: [3,3,0,0] }
+        },
+        {
+          name: 'Tổng Lắp Trong Kỳ (Tấn)',
+          type: 'line',
+          yAxisIndex: 1,
+          silent: true,
+          symbol: 'none',
+          lineStyle: { opacity: 0 },
+          data: barDay.map((dVal, idx) => +(dVal + (barNight[idx] || 0)).toFixed(2)),
+          label: {
+            show: true,
+            position: 'top',
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: '#1E3A8A',
+            formatter: (p) => p.value > 0 ? Number(p.value).toLocaleString('vi-VN', {maximumFractionDigits:1}) : ''
+          },
+          labelLayout: { hideOverlap: true }
+        },
+        {
+          name: 'Kế Hoạch Lũy Kế (Tấn)',
+          type: 'line',
+          smooth: true,
+          showSymbol: false,
+          data: cumPlan,
+          lineStyle: { width: 2.5, type: 'dashed', color: '#8B1E24' },
+          itemStyle: { color: '#8B1E24' }
+        },
+        {
+          name: 'Thực Tế Lũy Kế (Tấn)',
+          type: 'line',
+          smooth: true,
+          showSymbol: false,
+          data: cumAct,
+          lineStyle: { width: 3, color: '#059669' },
+          itemStyle: { color: '#059669' },
+          areaStyle: { color: 'rgba(5, 150, 105, 0.08)' }
+        }
+      ]
+    }, true);
+  }
+
+  function renderGroupChart(dict, gErect, gInv, gRem) {
+    const rows = [];
+    for (let i = 0; i < dict.length; i++) {
+      const tot = gErect[i] + gInv[i] + gRem[i];
+      if (tot > 0.01) rows.push({ name: dict[i], e: +gErect[i].toFixed(2), inv: +gInv[i].toFixed(2), rem: +gRem[i].toFixed(2), tot });
+    }
+    rows.sort((a, b) => b.tot - a.tot);
+    const top = rows.slice(0, 12);
+
+    charts.chartGroupProgress.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      legend: { top: 0 },
+      grid: { left: 130, right: 24, top: 34, bottom: 26 },
+      xAxis: { type: 'value', name: 'Tấn' },
+      yAxis: { type: 'category', inverse: true, data: top.map(r => r.name), axisLabel: { width: 118, overflow: 'truncate' } },
+      dataZoom: [{ type: 'inside', yAxisIndex: 0 }, { type: 'slider', yAxisIndex: 0, width: 14, right: 4 }],
+      series: [
+        { name: 'Đã Lắp Dựng', type: 'bar', stack: 'tot', data: top.map(r => r.e), label: { show: true, position: 'inside', fontSize: 10, color: '#fff', formatter: p => p.value > 0 ? p.value.toLocaleString('vi-VN', {maximumFractionDigits:1}) : '' }, labelLayout: { hideOverlap: true }, itemStyle: { color: '#059669' } },
+        { name: 'Đã Nhận (Chờ lắp)', type: 'bar', stack: 'tot', data: top.map(r => r.inv), label: { show: true, position: 'inside', fontSize: 10, color: '#fff', formatter: p => p.value > 0 ? p.value.toLocaleString('vi-VN', {maximumFractionDigits:1}) : '' }, labelLayout: { hideOverlap: true }, itemStyle: { color: '#D97706' } },
+        { name: 'Chưa Về Công Trường', type: 'bar', stack: 'tot', data: top.map(r => r.rem), label: { show: true, position: 'right', fontSize: 10, color: '#334155', formatter: p => p.value > 0 ? p.value.toLocaleString('vi-VN', {maximumFractionDigits:1}) : '' }, labelLayout: { hideOverlap: true }, itemStyle: { color: '#CBD5E1' } }
+      ]
+    }, true);
+  }
+
+  function renderTeamChart(tDict, tErect) {
+    // 1. Deduplicate Schedule KL per unique task (Hạng mục + Đội + Ngày BĐ/KT) in case Schedule repeats task KL across daily rows
+    const uniqueTaskPlan = new Map();
+    const dailyPlanByTeam = new Map();
+    let totalActual = 0;
+    for (let i = 1; i < tDict.length; i++) totalActual += tErect[i];
+
+    for (const s of STORE.schedule) {
+      if (!s.doiTC) continue;
+      if (s.kl > 0) {
+        const taskKey = `${s.doiTC}||${s.hangMuc}||${s.startInt}||${s.endInt}||${s.kl}`;
+        if (!uniqueTaskPlan.has(taskKey)) {
+          uniqueTaskPlan.set(taskKey, { doiTC: s.doiTC, kl: s.kl });
+        }
+      }
+      if (s.klNgay > 0) {
+        dailyPlanByTeam.set(s.doiTC, (dailyPlanByTeam.get(s.doiTC) || 0) + s.klNgay);
+      }
+    }
+
+    const planMap = new Map();
+    if (uniqueTaskPlan.size > 0) {
+      for (const item of uniqueTaskPlan.values()) {
+        planMap.set(item.doiTC, (planMap.get(item.doiTC) || 0) + item.kl);
+      }
+    } else {
+      for (const [k, v] of dailyPlanByTeam.entries()) planMap.set(k, v);
+    }
+
+    // Auto-detect unit mismatch (if Schedule KL is in kg while sheet data KL Đã Lắp is in Tons)
+    let rawPlanSum = 0;
+    for (const v of planMap.values()) rawPlanSum += v;
+    const unitScale = (totalActual > 0 && rawPlanSum > totalActual * 25) ? 0.001 : 1;
+
+    const teams = [];
+    for (let i = 1; i < tDict.length; i++) {
+      const name = tDict[i];
+      const act = +tErect[i].toFixed(2); // Cột 'KL Đã Lắp' bên sheet data (đã chuẩn hóa Tấn)
+      const pln = +((planMap.get(name) || 0) * unitScale).toFixed(2);
+      if (act > 0 || pln > 0) teams.push({ name, act, pln });
+    }
+    teams.sort((a, b) => Math.max(b.act, b.pln) - Math.max(a.act, a.pln));
+
+    const labelOpt = {
+      show: true,
+      position: 'top',
+      fontSize: 10.5,
+      fontWeight: 'bold',
+      fontFamily: "'Times New Roman', Times, serif",
+      formatter: (p) => p.value > 0 ? Number(p.value).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : ''
+    };
+
+    charts.chartTeams.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        valueFormatter: (v) => Number(v || 0).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Tấn'
+      },
+      legend: { top: 0, textStyle: { fontFamily: "'Times New Roman', Times, serif" } },
+      grid: { left: 55, right: 20, top: 38, bottom: 72 },
+      dataZoom: [
+        { type: 'inside', xAxisIndex: 0 },
+        { type: 'slider', xAxisIndex: 0, height: 18, bottom: 6 }
+      ],
+      xAxis: {
+        type: 'category',
+        data: teams.map(t => t.name),
+        axisLabel: { rotate: 16, width: 110, overflow: 'truncate', fontFamily: "'Times New Roman', Times, serif" }
+      },
+      yAxis: { type: 'value', name: 'Tấn', nameTextStyle: { fontFamily: "'Times New Roman', Times, serif" } },
+      series: [
+        {
+          name: 'Kế Hoạch (Schedule - Tấn)',
+          type: 'bar',
+          barMaxWidth: 38,
+          data: teams.map(t => t.pln),
+          label: Object.assign({}, labelOpt, { color: '#475569' }),
+          labelLayout: { hideOverlap: true },
+          itemStyle: { color: '#94A3B8', borderRadius: [4,4,0,0] }
+        },
+        {
+          name: 'KL Đã Lắp (data - Tấn)',
+          type: 'bar',
+          barMaxWidth: 38,
+          data: teams.map(t => t.act),
+          label: Object.assign({}, labelOpt, { color: '#8B1E24' }),
+          labelLayout: { hideOverlap: true },
+          itemStyle: { color: '#8B1E24', borderRadius: [4,4,0,0] }
+        }
+      ]
+    }, true);
+  }
+
+  function intToEpochDays(dateInt) {
+    if (!dateInt || dateInt < 19000101) return null;
+    const y = Math.floor(dateInt / 10000);
+    const m = Math.floor((dateInt % 10000) / 100) - 1;
+    const d = dateInt % 100;
+    return Math.floor(Date.UTC(y, m, d) / 86400000);
+  }
+
+  function epochDaysToDateInt(dayNum) {
+    const dt = new Date(dayNum * 86400000);
+    return dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate();
+  }
+
+  function renderForecastChart(fDict, fTotal, fDeliv) {
+    // Cumulative Trajectory Forecast Chart matching executive milestone & pace projection design
+    const idx = FILTERED_INDICES;
+    const c = STORE.cols;
+
+    let totalTon = 0, delivTon = 0, erectTon = 0;
+    const erectByDate = new Map();
+    const delivByDate = new Map();
+    let minDateInt = Infinity, maxActualDateInt = 0, minActualDateInt = Infinity;
+
+    for (let k = 0; k < idx.length; k++) {
+      const i = idx[k];
+      const w = c.weightTon[i];
+      const kn = c.klNhanTon[i];
+      const kl = c.klLapTon[i];
+      totalTon += w;
+      delivTon += kn;
+      erectTon += kl;
+
+      const dl = c.ngayLap[i];
+      if (dl > 19000101 && kl > 0) {
+        erectByDate.set(dl, (erectByDate.get(dl) || 0) + kl);
+        if (dl < minDateInt) minDateInt = dl;
+        if (dl < minActualDateInt) minActualDateInt = dl;
+        if (dl > maxActualDateInt) maxActualDateInt = dl;
+      }
+      const dn = c.ngayNhan[i];
+      if (dn > 19000101 && kn > 0) {
+        delivByDate.set(dn, (delivByDate.get(dn) || 0) + kn);
+        if (dn < minDateInt) minDateInt = dn;
+      }
+    }
+
+    // Schedule dates & target milestones
+    const planByDate = new Map();
+    let maxPlanDateInt = 0, maxEndDateInt = 0;
+    for (const s of STORE.schedule) {
+      if (s.listDateInt > 19000101) {
+        if (s.listDateInt < minDateInt) minDateInt = s.listDateInt;
+        if (s.listDateInt > maxPlanDateInt) maxPlanDateInt = s.listDateInt;
+        if (s.klNgay > 0) planByDate.set(s.listDateInt, (planByDate.get(s.listDateInt) || 0) + s.klNgay);
+      }
+      if (s.endInt > maxEndDateInt) maxEndDateInt = s.endInt;
+    }
+
+    const todayInt = DATA_DATE_INT > 19000101 ? DATA_DATE_INT : (maxActualDateInt || 20261112);
+    const todayDay = intToEpochDays(todayInt);
+    if (!isFinite(minDateInt) || minDateInt > todayInt) {
+      minDateInt = epochDaysToDateInt(todayDay - 45);
+    }
+    const startDay = intToEpochDays(minDateInt);
+
+    // Accurate productivity calculation:
+    // 1) Overall average daily erection rate from first erection date (or start date) to todayDay
+    const erectStartDay = (minActualDateInt < Infinity && minActualDateInt <= todayInt)
+      ? intToEpochDays(minActualDateInt)
+      : startDay;
+    const erectSpanDays = Math.max(1, todayDay - erectStartDay + 1);
+    const paceOverall = erectTon / erectSpanDays;
+
+    // 2) Recent 28-day window average daily erection rate (clamped to available erected days)
+    let recent28dTon = 0;
+    for (const [dtInt, val] of erectByDate.entries()) {
+      const ed = intToEpochDays(dtInt);
+      if (ed !== null && todayDay - ed < 28 && ed <= todayDay) {
+        recent28dTon += val;
+      }
+    }
+    const window28Days = Math.max(1, Math.min(28, todayDay - erectStartDay + 1));
+    const pace28d = recent28dTon / window28Days;
+
+    // Use paceOverall as primary transparent velocity (with fallback if 0)
+    const velocity = paceOverall > 0.01 ? paceOverall : (pace28d > 0.01 ? pace28d : Math.max(1, totalTon / 90));
+
+    // Determine Target Milestone 1 (Mid / Zone Milestone) & Target Milestone 2 (Final Completion)
+    const targetFinalTon = totalTon > 0 ? totalTon : 65000;
+    const midTargetTon = erectTon + (targetFinalTon - erectTon) * 0.65;
+
+    const midDateInt = maxEndDateInt > todayInt
+      ? epochDaysToDateInt(Math.round((todayDay + intToEpochDays(maxEndDateInt)) / 2))
+      : (maxPlanDateInt > todayInt ? epochDaysToDateInt(Math.round((todayDay + intToEpochDays(maxPlanDateInt)) / 2)) : epochDaysToDateInt(todayDay + 25));
+
+    const finalDateInt = maxEndDateInt > todayInt
+      ? maxEndDateInt
+      : (maxPlanDateInt > todayInt ? maxPlanDateInt : epochDaysToDateInt(todayDay + 75));
+
+    const midDay = intToEpochDays(midDateInt);
+    const finalDay = intToEpochDays(finalDateInt);
+
+    // Projected completion date at current velocity
+    const maxCapTon = delivTon > erectTon ? Math.max(erectTon + (delivTon - erectTon), targetFinalTon) : targetFinalTon;
+    const remToFinal = Math.max(0, maxCapTon - erectTon);
+    const daysNeeded = Math.max(1, Math.ceil(remToFinal / Math.max(0.1, velocity)));
+    const projFinishDay = todayDay + daysNeeded;
+    const projFinishDateInt = epochDaysToDateInt(projFinishDay);
+    const delayDays = projFinishDay - finalDay; // >0 means late, <0 means early
+
+    // Build daily timeline from startDay to max(finalDay, projFinishDay) + 12 days
+    const chartEndDay = Math.max(finalDay, projFinishDay) + 12;
+    const labels = [];
+    const erectedSeries = [];
+    const deliveredSeries = [];
+    const requiredPathSeries = [];
+    const pacePathSeries = [];
+
+    let cumErect = 0;
+    let cumDeliv = 0;
+    for (const [dtInt, val] of delivByDate.entries()) {
+      const ed = intToEpochDays(dtInt);
+      if (ed !== null && ed < startDay) cumDeliv += val;
+    }
+    for (const [dtInt, val] of erectByDate.entries()) {
+      const ed = intToEpochDays(dtInt);
+      if (ed !== null && ed < startDay) cumErect += val;
+    }
+
+    let rawErectSum = cumErect, rawDelivSum = cumDeliv;
+    for (const [dtInt, val] of erectByDate.entries()) {
+      const ed = intToEpochDays(dtInt);
+      if (ed !== null && ed >= startDay && ed <= todayDay) rawErectSum += val;
+    }
+    for (const [dtInt, val] of delivByDate.entries()) {
+      const ed = intToEpochDays(dtInt);
+      if (ed !== null && ed >= startDay && ed <= todayDay) rawDelivSum += val;
+    }
+
+    const totalActualAtToday = erectTon > 0 ? erectTon : rawErectSum;
+    const totalDelivAtToday = delivTon > totalActualAtToday ? delivTon : Math.max(totalActualAtToday, rawDelivSum);
+
+    let runningErect = 0;
+    let runningDeliv = 0;
+    let rawStepErectSum = 0, rawStepDelivSum = 0;
+    const dayErectRaw = new Float64Array(todayDay - startDay + 1);
+    const dayDelivRaw = new Float64Array(todayDay - startDay + 1);
+
+    for (let dIdx = 0; dIdx <= todayDay - startDay; dIdx++) {
+      const dtInt = epochDaysToDateInt(startDay + dIdx);
+      const eV = erectByDate.get(dtInt) || 0;
+      const nV = delivByDate.get(dtInt) || 0;
+      dayErectRaw[dIdx] = eV;
+      dayDelivRaw[dIdx] = nV;
+      rawStepErectSum += eV;
+      rawStepDelivSum += nV;
+    }
+
+    const eScale = rawStepErectSum > 0 ? (totalActualAtToday / rawStepErectSum) : 0;
+    const nScale = rawStepDelivSum > 0 ? (totalDelivAtToday / rawStepDelivSum) : 0;
+
+    for (let day = startDay; day <= chartEndDay; day++) {
+      const dtInt = epochDaysToDateInt(day);
+      const vnShort = `${String(dtInt % 100).padStart(2, '0')}/${String(Math.floor((dtInt % 10000) / 100)).padStart(2, '0')}`;
+      labels.push(vnShort);
+
+      if (day <= todayDay) {
+        const dIdx = day - startDay;
+        runningErect += dayErectRaw[dIdx] * eScale;
+        runningDeliv += dayDelivRaw[dIdx] * nScale;
+        erectedSeries.push(+Math.min(totalActualAtToday, runningErect).toFixed(2));
+        deliveredSeries.push(+Math.min(totalDelivAtToday, runningDeliv).toFixed(2));
+        requiredPathSeries.push(day === todayDay ? +totalActualAtToday.toFixed(2) : null);
+        pacePathSeries.push(day === todayDay ? +totalActualAtToday.toFixed(2) : null);
+      } else {
+        erectedSeries.push(null);
+        deliveredSeries.push(day <= finalDay ? +Math.min(targetFinalTon, totalDelivAtToday + ((day - todayDay) / Math.max(1, finalDay - todayDay)) * Math.max(0, targetFinalTon - totalDelivAtToday)).toFixed(2) : null);
+
+        if (day <= finalDay) {
+          const tFrac = (day - todayDay) / Math.max(1, finalDay - todayDay);
+          requiredPathSeries.push(+(totalActualAtToday + tFrac * Math.max(0, targetFinalTon - totalActualAtToday)).toFixed(2));
+        } else {
+          requiredPathSeries.push(null);
+        }
+
+        if (day <= projFinishDay) {
+          const pVal = Math.min(maxCapTon, totalActualAtToday + (day - todayDay) * velocity);
+          pacePathSeries.push(+pVal.toFixed(2));
+        } else {
+          pacePathSeries.push(null);
+        }
+      }
+    }
+
+    const todayIdx = Math.max(0, Math.min(labels.length - 1, todayDay - startDay));
+    const midIdx = Math.max(0, Math.min(labels.length - 1, midDay - startDay));
+    const finalIdx = Math.max(0, Math.min(labels.length - 1, finalDay - startDay));
+    const projIdx = Math.max(0, Math.min(labels.length - 1, projFinishDay - startDay));
+    const projEndVal = +Math.min(maxCapTon, totalActualAtToday + daysNeeded * velocity).toFixed(2);
+
+    const paceNoteText = delayDays > 0
+      ? `giữ tốc độ: ${intToVNDate(projFinishDateInt).slice(0,5)}, trễ ${delayDays} ngày`
+      : (delayDays < 0
+        ? `giữ tốc độ: ${intToVNDate(projFinishDateInt).slice(0,5)}, sớm ${Math.abs(delayDays)} ngày`
+        : `giữ tốc độ: đúng tiến độ (${intToVNDate(projFinishDateInt).slice(0,5)})`);
+
+    const subEl = document.getElementById('forecastSubInfo');
+    if (subEl) {
+      subEl.textContent =
+        `Năng suất TT: ${fmtNum(velocity, 1)} T/ngày (${fmtNum(totalActualAtToday, 0)} T / ${erectSpanDays} ngày; 28N: ${fmtNum(pace28d, 1)} T/ngày) • Dự kiến xong: ${intToVNDate(projFinishDateInt)} (${delayDays > 0 ? 'Trễ ' + delayDays + ' ngày' : (delayDays < 0 ? 'Sớm ' + Math.abs(delayDays) + ' ngày' : 'Đúng KH')})`;
+    }
+
+    const markPoints = [
+      {
+        name: 'Đã lắp',
+        coord: [todayIdx, +totalActualAtToday.toFixed(2)],
+        itemStyle: { color: '#1E3A8A' },
+        label: {
+          show: true,
+          position: 'bottom',
+          distance: 8,
+          backgroundColor: '#FFFFFF',
+          borderColor: '#CBD5E1',
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [3, 7],
+          color: '#0F172A',
+          fontWeight: 'bold',
+          fontSize: 10.5,
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: () => `Đã lắp ${fmtNum(totalActualAtToday, 1)} t`
+        }
+      },
+      {
+        name: 'Đã tập kết',
+        coord: [todayIdx, +totalDelivAtToday.toFixed(2)],
+        itemStyle: { color: '#059669' },
+        label: {
+          show: true,
+          position: 'top',
+          distance: 8,
+          backgroundColor: '#ECFDF5',
+          borderColor: '#10B981',
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [3, 7],
+          color: '#065F46',
+          fontWeight: 'bold',
+          fontSize: 10.5,
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: () => `Đã tập kết ${fmtNum(totalDelivAtToday, 1)} t`
+        }
+      },
+      {
+        name: 'Mốc giữa',
+        coord: [midIdx, +midTargetTon.toFixed(2)],
+        symbol: 'circle',
+        symbolSize: 8,
+        itemStyle: { color: '#FFFFFF', borderColor: '#B91C1C', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'left',
+          distance: 8,
+          backgroundColor: '#991B1B',
+          borderRadius: 10,
+          padding: [3, 8],
+          color: '#FFFFFF',
+          fontWeight: 'bold',
+          fontSize: 10,
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: () => `! Mốc ${intToVNDate(midDateInt).slice(0,5)} • ${fmtNum(midTargetTon, 1)} t`
+        }
+      },
+      {
+        name: 'Hoàn thành',
+        coord: [finalIdx, +targetFinalTon.toFixed(2)],
+        symbol: 'circle',
+        symbolSize: 8,
+        itemStyle: { color: '#FFFFFF', borderColor: '#B45309', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'bottom',
+          distance: 8,
+          backgroundColor: '#92400E',
+          borderRadius: 10,
+          padding: [3, 8],
+          color: '#FFFFFF',
+          fontWeight: 'bold',
+          fontSize: 10,
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: () => `! Hoàn thành ${intToVNDate(finalDateInt).slice(0,5)} • ${fmtNum(targetFinalTon, 1)} t`
+        }
+      },
+      {
+        name: 'Dự báo tốc độ',
+        coord: [projIdx, projEndVal],
+        symbol: 'circle',
+        symbolSize: 7,
+        itemStyle: { color: '#FFFFFF', borderColor: '#475569', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'top',
+          distance: 8,
+          backgroundColor: '#FFFFFF',
+          borderColor: '#CBD5E1',
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [3, 7],
+          color: '#334155',
+          fontSize: 10,
+          fontWeight: 'bold',
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: () => paceNoteText
+        }
+      }
+    ];
+
+    charts.chartFactories.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'line', lineStyle: { type: 'dashed', color: '#94A3B8' } },
+        formatter: (params) => {
+          if (!params || !params.length) return '';
+          let h = `<div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid #E2E8F0;padding-bottom:3px;">Ngày ${esc(params[0].axisValue)}</div>`;
+          for (const p of params) {
+            if (p.value !== null && p.value !== undefined) {
+              h += `<div style="display:flex;justify-content:space-between;gap:14px;"><span>${p.marker} ${p.seriesName}</span><b>${Number(p.value).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Tấn</b></div>`;
+            }
+          }
+          h += `<div style="font-size:11px;color:#475569;margin-top:4px;padding-top:3px;border-top:1px dashed #CBD5E1;">Năng suất TB giai đoạn (${erectSpanDays} ngày): <b>${fmtNum(paceOverall, 2)} T/ngày</b> • 28 ngày: <b>${fmtNum(pace28d, 2)} T/ngày</b></div>`;
+          return h;
+        }
+      },
+      legend: {
+        top: 0,
+        textStyle: { fontSize: 11, fontFamily: "'Times New Roman', Times, serif" },
+        data: [
+          'Đã lắp (lũy kế)',
+          'Đã tập kết (lũy kế)',
+          'Đường cần đi tới mốc',
+          'Nếu giữ năng suất thực tế'
+        ]
+      },
+      grid: { left: 52, right: 115, top: 44, bottom: 38 },
+      dataZoom: [{ type: 'inside', xAxisIndex: 0 }, { type: 'slider', xAxisIndex: 0, height: 14, bottom: 4 }],
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: labels,
+        axisLabel: {
+          fontSize: 10.5,
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: (val, idxVal) => idxVal === todayIdx ? `${val}
+Hôm nay` : val
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Tấn',
+        nameTextStyle: { fontFamily: "'Times New Roman', Times, serif" },
+        splitLine: { lineStyle: { type: 'dashed', color: '#E2E8F0' } },
+        axisLabel: {
+          fontFamily: "'Times New Roman', Times, serif",
+          formatter: (v) => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v
+        }
+      },
+      series: [
+        {
+          name: 'Đã lắp (lũy kế)',
+          type: 'line',
+          smooth: 0.25,
+          showSymbol: false,
+          data: erectedSeries,
+          lineStyle: { width: 2.5, color: '#1E3A8A' },
+          itemStyle: { color: '#1E3A8A' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(30, 58, 138, 0.22)' },
+              { offset: 1, color: 'rgba(30, 58, 138, 0.01)' }
+            ])
+          },
+          markLine: {
+            silent: true,
+            symbol: 'none',
+            lineStyle: { type: 'solid', color: '#94A3B8', width: 1 },
+            label: { show: false },
+            data: [{ xAxis: todayIdx }]
+          },
+          markPoint: {
+            symbol: 'circle',
+            symbolSize: 8,
+            data: markPoints
+          }
+        },
+        {
+          name: 'Đã tập kết (lũy kế)',
+          type: 'line',
+          smooth: 0.25,
+          showSymbol: false,
+          data: deliveredSeries,
+          lineStyle: { width: 2, color: '#059669' },
+          itemStyle: { color: '#059669' }
+        },
+        {
+          name: 'Đường cần đi tới mốc',
+          type: 'line',
+          smooth: false,
+          showSymbol: false,
+          data: requiredPathSeries,
+          lineStyle: { width: 1.8, type: 'dashed', color: '#B91C1C' },
+          itemStyle: { color: '#B91C1C' }
+        },
+        {
+          name: 'Nếu giữ năng suất thực tế',
+          type: 'line',
+          smooth: false,
+          showSymbol: false,
+          data: pacePathSeries,
+          lineStyle: { width: 1.8, type: 'dotted', color: '#475569' },
+          itemStyle: { color: '#475569' }
+        }
+      ]
+    }, true);
+  }
+
+  function renderPieChart(pDict, pSum) {
+    const data = [];
+    for (let i = 0; i < pDict.length; i++) {
+      if (pSum[i] > 0.01) data.push({ name: pDict[i], value: +pSum[i].toFixed(2) });
+    }
+    data.sort((a, b) => b.value - a.value);
+    const palette = ['#059669', '#D97706', '#8B1E24', '#2563EB', '#64748B', '#7C3AED'];
+
+    charts.chartQualityShift.setOption({
+      color: palette,
+      tooltip: { trigger: 'item', formatter: '{b}: <b>{c} Tấn</b> ({d}%)' },
+      legend: { bottom: 0, type: 'scroll' },
+      series: [{
+        type: 'pie',
+        radius: ['44%', '72%'],
+        center: ['50%', '45%'],
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+        label: { formatter: '{b}\n{d}%', fontSize: 11.5 },
+        data
+      }]
+    }, true);
+  }
+
+  // ===== 7-COLUMN VERTICAL VIRTUAL SCROLL TABLE =====
+  const ROW_HEIGHT = 40;
+  const BUFFER_ROWS = 12;
+
+  function applyTableSearch() {
+    const q = SEARCH_TERM.trim().toLowerCase();
+    if (!q) {
+      TABLE_INDICES = FILTERED_INDICES;
+    } else {
+      const src = FILTERED_INDICES;
+      const c = STORE.cols;
+      const d = STORE.dicts;
+      const tmp = new Int32Array(src.length);
+      let cnt = 0;
+      for (let k = 0; k < src.length; k++) {
+        const i = src[k];
+        if (
+          c.memberNo[i].toLowerCase().includes(q) ||
+          d.hangMucL2[c.hangMucL2[i]].toLowerCase().includes(q) ||
+          c.originalMark[i].toLowerCase().includes(q) ||
+          c.barcode[i].toLowerCase().includes(q) ||
+          c.gridPos[i].toLowerCase().includes(q) ||
+          c.section[i].toLowerCase().includes(q) ||
+          c.soXe[i].toLowerCase().includes(q)
+        ) {
+          tmp[cnt++] = i;
+        }
+      }
+      TABLE_INDICES = tmp.subarray(0, cnt);
+    }
+    document.getElementById('tableCountInfo').textContent =
+      `Hiển thị ${fmtInt(TABLE_INDICES.length)} cấu kiện (Cuộn dọc mượt mà - Virtual Scroll)`;
+    const vp = document.getElementById('vtableViewport');
+    vp.scrollTop = 0;
+    document.getElementById('vtableSpacer').style.height = (TABLE_INDICES.length * ROW_HEIGHT) + 'px';
+    renderVirtualRows();
+  }
+
+  function renderVirtualRows() {
+    if (!STORE || !TABLE_INDICES) return;
+    const vp = document.getElementById('vtableViewport');
+    const scrollTop = vp.scrollTop;
+    const vpHeight = vp.clientHeight || 520;
+    const total = TABLE_INDICES.length;
+
+    const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS);
+    const endIdx = Math.min(total, Math.ceil((scrollTop + vpHeight) / ROW_HEIGHT) + BUFFER_ROWS);
+
+    const rowsEl = document.getElementById('vtableRows');
+    rowsEl.style.transform = `translateY(${startIdx * ROW_HEIGHT}px)`;
+
+    const c = STORE.cols;
+    const d = STORE.dicts;
+    const lenArr = c.lengthMm;
+    let html = '';
+
+    for (let k = startIdx; k < endIdx; k++) {
+      const i = TABLE_INDICES[k];
+      const hmL2 = d.hangMucL2[c.hangMucL2[i]] || '-';
+      const mNo = c.memberNo[i] || '-';
+      const lenVal = lenArr ? lenArr[i] : 0;
+      const wTon = c.weightTon[i];
+      const klLap = c.klLapTon[i];
+      const klNhan = c.klNhanTon[i];
+      const holdStr = d.hold[c.hold[i]] || '';
+      const isHold = holdStr.toLowerCase().includes('hold');
+
+      let badge = '<span class="status-badge st-pending">Chưa xuất hàng</span>';
+      if (isHold) badge = '<span class="status-badge st-hold">Đang Hold</span>';
+      else if (klLap > 0 || c.ngayLap[i] > 0) badge = '<span class="status-badge st-erected">Đã lắp dựng</span>';
+      else if (klNhan > 0 || c.ngayNhan[i] > 0) badge = '<span class="status-badge st-delivered">Đã nhận (Chờ lắp)</span>';
+
+      html += `
+        <div class="vtable-row${k % 2 === 1 ? ' alt' : ''}">
+          <div class="vcell" title="${esc(hmL2)}">${esc(hmL2)}</div>
+          <div class="vcell" style="font-weight:700;color:var(--brand);" title="${esc(mNo)}">${esc(mNo)}</div>
+          <div class="vcell num">${lenVal > 0 ? fmtInt(lenVal) : '-'}</div>
+          <div class="vcell num" style="font-weight:600;">${fmtNum(wTon, 3)}</div>
+          <div class="vcell center">${intToVNDate(c.ngayNhan[i])}</div>
+          <div class="vcell center">${intToVNDate(c.ngayLap[i])}</div>
+          <div class="vcell center">${badge}</div>
+        </div>
+      `;
+    }
+    rowsEl.innerHTML = html || '<div style="padding:36px;text-align:center;color:var(--text-muted);">Không tìm thấy cấu kiện phù hợp.</div>';
+  }
+
+  function updateAutocomplete(q) {
+    const listEl = document.getElementById('autocompleteList');
+    if (!q || q.length < 2 || !FILTERED_INDICES) {
+      listEl.style.display = 'none';
+      return;
+    }
+    const ql = q.toLowerCase();
+    const c = STORE.cols;
+    const d = STORE.dicts;
+    const matches = [];
+    for (let k = 0; k < FILTERED_INDICES.length && matches.length < 8; k++) {
+      const i = FILTERED_INDICES[k];
+      if (
+        c.memberNo[i].toLowerCase().includes(ql) ||
+        d.hangMucL2[c.hangMucL2[i]].toLowerCase().includes(ql) ||
+        c.barcode[i].toLowerCase().includes(ql) ||
+        c.originalMark[i].toLowerCase().includes(ql) ||
+        c.soXe[i].toLowerCase().includes(ql)
+      ) {
+        matches.push(i);
+      }
+    }
+    if (!matches.length) {
+      listEl.style.display = 'none';
+      return;
+    }
+    listEl.innerHTML = matches.map(i => `
+      <div class="autocomplete-item" data-val="${esc(c.memberNo[i])}">
+        <span><strong>${esc(c.memberNo[i])}</strong> • ${esc(d.hangMucL2[c.hangMucL2[i]])}</span>
+        <span style="color:var(--text-muted);font-size:11px;">${fmtNum(c.weightTon[i], 3)} T ${c.soXe[i] ? '| ' + esc(c.soXe[i]) : ''}</span>
+      </div>
+    `).join('');
+    listEl.style.display = 'block';
+    for (const item of listEl.children) {
+      item.addEventListener('click', () => {
+        const val = item.dataset.val;
+        document.getElementById('tableSearchInput').value = val;
+        SEARCH_TERM = val;
+        listEl.style.display = 'none';
+        applyTableSearch();
+      });
+    }
+  }
+
+  function getInstallStatusText(i) {
+    const c = STORE.cols;
+    const d = STORE.dicts;
+    const holdStr = d.hold[c.hold[i]] || '';
+    if (holdStr.toLowerCase().includes('hold')) return 'Đang Hold';
+    if (c.klLapTon[i] > 0 || c.ngayLap[i] > 0) return 'Đã lắp dựng';
+    if (c.klNhanTon[i] > 0 || c.ngayNhan[i] > 0) return 'Đã nhận (Chờ lắp)';
+    return 'Chưa xuất hàng';
+  }
+
+  function buildExportRows(maxRows) {
+    const c = STORE.cols;
+    const d = STORE.dicts;
+    const lenArr = c.lengthMm;
+    const lim = Math.min(TABLE_INDICES.length, maxRows);
+    const out = [['Hạng Mục LV 2','Member No','Length (mm)','Weight (Tấn)','Ngày Nhận Hàng','Ngày Lắp','Tình Trạng Lắp','Project','Zone','Phase','Hệ KCT','Đội Thi Công','Nhà Máy','KL Đã Nhận (Tấn)','KL Đã Lắp (Tấn)','Số Xe','Barcode','Hold','Nghiệm Thu']];
+    for (let k = 0; k < lim; k++) {
+      const i = TABLE_INDICES[k];
+      out.push([
+        d.hangMucL2[c.hangMucL2[i]], c.memberNo[i], lenArr ? Math.round(lenArr[i]) : 0, +c.weightTon[i].toFixed(3),
+        intToDateStr(c.ngayNhan[i]), intToDateStr(c.ngayLap[i]), getInstallStatusText(i),
+        d.project[c.project[i]], d.zone[c.zone[i]], d.phase[c.phase[i]],
+        d.heKCT[c.heKCT[i]], d.doiTC[c.doiTC[i]], d.nhaMay[c.nhaMay[i]],
+        +c.klNhanTon[i].toFixed(3), +c.klLapTon[i].toFixed(3),
+        c.soXe[i], c.barcode[i], d.hold[c.hold[i]], d.nghiemThu[c.nghiemThu[i]]
+      ]);
+    }
+    return out;
+  }
+
+  function exportCSV() {
+    if (!TABLE_INDICES || !TABLE_INDICES.length) return;
+    const rows = buildExportRows(TABLE_INDICES.length);
+    const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Steel_Report_Filtered_${TABLE_INDICES.length}.csv`;
+    a.click();
+  }
+
+  function exportXLSX() {
+    if (!TABLE_INDICES || !TABLE_INDICES.length) return;
+    const limit = 100000;
+    if (TABLE_INDICES.length > limit && !confirm(`Danh sách có ${fmtInt(TABLE_INDICES.length)} dòng. Xuất tối đa 100.000 dòng đầu ra .xlsx? (Hoặc dùng Xuất CSV để xuất toàn bộ)`)) return;
+    const rows = buildExportRows(limit);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Filtered_Data');
+    XLSX.writeFile(wb, `Steel_Report_Filtered_${Math.min(TABLE_INDICES.length, limit)}.xlsx`);
+  }
+
+  document.getElementById('btnToggleSlicer').addEventListener('click', () => {
+    document.getElementById('slicerPanel').classList.toggle('collapsed');
+    setTimeout(() => Object.values(charts).forEach(ch => ch.resize()), 240);
+  });
+
+  document.getElementById('btnResetFilters').addEventListener('click', () => {
+    ACTIVE_FILTERS = {};
+    DATE_FILTERS = { nhanFrom: 0, nhanTo: 0, lapFrom: 0, lapTo: 0 };
+    document.querySelectorAll('#dynamicSlicers input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.slicer-badge').forEach(b => { b.textContent = '0'; b.classList.remove('active'); });
+    ['fltNhanFrom','fltNhanTo','fltLapFrom','fltLapTo'].forEach(id => document.getElementById(id).value = '');
+    applyFiltersAndRender();
+  });
+
+  ['fltNhanFrom','fltNhanTo','fltLapFrom','fltLapTo'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      DATE_FILTERS.nhanFrom = inputDateToInt(document.getElementById('fltNhanFrom').value);
+      DATE_FILTERS.nhanTo = inputDateToInt(document.getElementById('fltNhanTo').value);
+      DATE_FILTERS.lapFrom = inputDateToInt(document.getElementById('fltLapFrom').value);
+      DATE_FILTERS.lapTo = inputDateToInt(document.getElementById('fltLapTo').value);
+      applyFiltersAndRender();
+    });
+  });
+
+  document.getElementById('scurveModeCtrl').addEventListener('click', (e) => {
+    if (!e.target.dataset.mode) return;
+    CURRENT_SCURVE_MODE = e.target.dataset.mode;
+    e.currentTarget.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === e.target));
+    renderKPIsAndCharts(performance.now());
+  });
+  document.getElementById('groupAxisCtrl').addEventListener('click', (e) => {
+    if (!e.target.dataset.col) return;
+    CURRENT_GROUP_COL = e.target.dataset.col;
+    e.currentTarget.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === e.target));
+    renderKPIsAndCharts(performance.now());
+  });
+  document.getElementById('pieModeCtrl').addEventListener('click', (e) => {
+    if (!e.target.dataset.pie) return;
+    CURRENT_PIE_MODE = e.target.dataset.pie;
+    e.currentTarget.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === e.target));
+    renderKPIsAndCharts(performance.now());
+  });
+
+  let searchTimer = null;
+  const searchInput = document.getElementById('tableSearchInput');
+  const clearBtn = document.getElementById('btnClearSearch');
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value;
+    clearBtn.style.display = val ? 'block' : 'none';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      SEARCH_TERM = val;
+      updateAutocomplete(val);
+      applyTableSearch();
+    }, 150);
+  });
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    SEARCH_TERM = '';
+    clearBtn.style.display = 'none';
+    document.getElementById('autocompleteList').style.display = 'none';
+    applyTableSearch();
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) document.getElementById('autocompleteList').style.display = 'none';
+  });
+
+  document.getElementById('vtableViewport').addEventListener('scroll', renderVirtualRows, { passive: true });
+
+  document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+  document.getElementById('btnExportXLSX').addEventListener('click', exportXLSX);
+
+  function wireDropzone(el, isModal) {
+    el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('dragover'); });
+    el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFileUpload(e.dataTransfer.files[0], isModal);
+    });
+  }
+  wireDropzone(document.getElementById('emptyState'), false);
+  wireDropzone(document.getElementById('modalDropzone'), true);
+
+  document.getElementById('fileInputMain').addEventListener('change', (e) => handleFileUpload(e.target.files[0], false));
+  document.getElementById('fileInputModal').addEventListener('change', (e) => handleFileUpload(e.target.files[0], true));
+
+  document.getElementById('btnOpenUpload').addEventListener('click', () => document.getElementById('uploadModal').classList.add('open'));
+  document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('uploadModal').classList.remove('open'));
+  document.getElementById('btnClearCache').addEventListener('click', () => {
+    if (confirm('Xóa toàn bộ dữ liệu đệm trong IndexedDB và tải lại trang?')) clearCache();
+  });
+
+  const runDemo = () => runWorkerTask({ type: 'GENERATE_DEMO', count: 50000 }, [], false);
+  document.getElementById('btnDemoHero').addEventListener('click', runDemo);
+  document.getElementById('btnDemoQuick').addEventListener('click', runDemo);
+
+  window.addEventListener('resize', () => Object.values(charts).forEach(ch => ch.resize()));
+
+  // ===== EXPORT PDF (EXECUTIVE A4 LANDSCAPE PRINT) =====
+  function exportPDF() {
+    if (!STORE) {
+      alert('Vui lòng nạp dữ liệu hoặc tải dữ liệu mẫu trước khi xuất PDF.');
+      return;
+    }
+    // Expand virtual table top rows briefly for print visibility
+    const vp = document.getElementById('vtableViewport');
+    const spacer = document.getElementById('vtableSpacer');
+    const rowsEl = document.getElementById('vtableRows');
+    const prevScroll = vp.scrollTop;
+    const prevSpacerH = spacer.style.height;
+    spacer.style.height = 'auto';
+    rowsEl.style.position = 'static';
+    rowsEl.style.transform = 'none';
+
+    // Render top 35 rows for clean print table
+    const origIndices = TABLE_INDICES;
+    if (TABLE_INDICES && TABLE_INDICES.length > 35) {
+      TABLE_INDICES = TABLE_INDICES.subarray(0, 35);
+    }
+    renderVirtualRows();
+    Object.values(charts).forEach(ch => ch.resize());
+
+    setTimeout(() => {
+      window.print();
+      // Restore virtual scroll state after print dialog closes
+      TABLE_INDICES = origIndices;
+      spacer.style.height = prevSpacerH;
+      rowsEl.style.position = 'absolute';
+      vp.scrollTop = prevScroll;
+      renderVirtualRows();
+      Object.values(charts).forEach(ch => ch.resize());
+    }, 250);
+  }
+
+  // ===== EXPORT STANDALONE HTML (WITH EMBEDDED DATA SNAPSHOT) =====
+  function exportStandaloneHTML() {
+    if (!STORE) {
+      alert('Vui lòng nạp dữ liệu hoặc tải dữ liệu mẫu trước khi xuất HTML.');
+      return;
+    }
+    const btn = document.getElementById('btnExportHTML');
+    const origText = btn.innerHTML;
+    btn.innerHTML = 'Đang đóng gói HTML...';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      try {
+        const serializedCols = {};
+        const typedKeys = [];
+        for (const [k, val] of Object.entries(STORE.cols)) {
+          if (ArrayBuffer.isView(val)) {
+            serializedCols[k] = Array.from(val);
+            typedKeys.push({ key: k, type: val.constructor.name });
+          } else {
+            serializedCols[k] = val;
+          }
+        }
+        const snapshot = {
+          meta: Object.assign({}, STORE.meta, { fileName: STORE.meta.fileName + ' [Bản Xuất Độc Lập]' }),
+          dicts: STORE.dicts,
+          cols: serializedCols,
+          typedKeys,
+          schedule: STORE.schedule
+        };
+
+        const jsonStr = JSON.stringify(snapshot).replace(/<\/script>/gi, '<\\/script>');
+
+        // Clone clean DOM without ECharts rendered nodes or Lucide replaced <svg>
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('#embeddedSnapshot').forEach(n => n.remove());
+        const dynSlicers = clone.querySelector('#dynamicSlicers');
+        if (dynSlicers) dynSlicers.innerHTML = '';
+        const vRows = clone.querySelector('#vtableRows');
+        if (vRows) { vRows.innerHTML = ''; vRows.removeAttribute('style'); }
+        const vSpacer = clone.querySelector('#vtableSpacer');
+        if (vSpacer) vSpacer.removeAttribute('style');
+        const emptySec = clone.querySelector('#emptyState');
+        if (emptySec) emptySec.classList.add('hidden');
+        const dashDiv = clone.querySelector('#dashboardContent');
+        if (dashDiv) dashDiv.classList.remove('hidden');
+
+        // Clear any ECharts DOM children so echarts.init() mounts cleanly on open
+        ['chartSCurve', 'chartGroupProgress', 'chartTeams', 'chartFactories', 'chartQualityShift'].forEach(id => {
+          const el = clone.querySelector('#' + id);
+          if (el) {
+            el.innerHTML = '';
+            el.removeAttribute('_echarts_instance_');
+            el.removeAttribute('style');
+          }
+        });
+
+        const bodyEl = clone.querySelector('body');
+        const snapTag = clone.ownerDocument.createElement('script');
+        snapTag.id = 'embeddedSnapshot';
+        snapTag.type = 'application/json';
+        snapTag.textContent = jsonStr;
+        bodyEl.appendChild(snapTag);
+
+        const docHtml = '<!DOCTYPE html>\n' + clone.outerHTML;
+        const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const dateTag = DATA_DATE_INT ? intToDateStr(DATA_DATE_INT) : 'Report';
+        a.download = `Bao_Cao_Ket_Cau_Thep_${dateTag}.html`;
+        a.click();
+      } catch (err) {
+        alert('Lỗi xuất HTML: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+      }
+    }, 50);
+  }
+
+  document.getElementById('btnExportPDF').addEventListener('click', exportPDF);
+  document.getElementById('btnExportHTML').addEventListener('click', exportStandaloneHTML);
+
+  function loadEmbeddedSnapshot() {
+    const el = document.getElementById('embeddedSnapshot');
+    if (!el || !el.textContent.trim()) return null;
+    try {
+      const snap = JSON.parse(el.textContent);
+      const typeMap = {
+        Uint16Array, Float32Array, Int32Array, Uint32Array, Float64Array
+      };
+      if (snap.typedKeys && snap.cols) {
+        for (const item of snap.typedKeys) {
+          const Ctor = typeMap[item.type];
+          if (Ctor && Array.isArray(snap.cols[item.key])) {
+            snap.cols[item.key] = new Ctor(snap.cols[item.key]);
+          }
+        }
+      }
+      return snap;
+    } catch (e) {
+      console.warn('Failed to parse embedded snapshot:', e);
+      return null;
+    }
+  }
+
+  lucide.createIcons();
+  const embedded = loadEmbeddedSnapshot();
+  if (embedded && embedded.meta && embedded.cols) {
+    initDashboardWithData(embedded);
+  } else {
+    loadFromCache().then(cached => {
+      if (cached && cached.meta && cached.cols && cached.cols.lengthMm) {
+        initDashboardWithData(cached);
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
